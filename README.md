@@ -19,14 +19,14 @@ To simplify deployment and demonstrations, the project uses a **software-defined
 ---
 
 ## System Architecture (High-Level)
-
+```
 graph TD
     A[Virtual Smart Plug] -->|MQTT| B[Data Ingestion Backend]
     B --> C[(Time-Series Database)]
     B --> D[(Metadata Database)]
     B --> E[Machine Learning Pipeline]
     E --> F[Web Dashboard]
-
+```
 ---
 
 ## Team & Responsibilities
