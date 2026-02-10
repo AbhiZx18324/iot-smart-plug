@@ -1,6 +1,6 @@
 # Smart Plug Data Schema Contract (v1.0)
 
-This schema defines the interface between the **Virtual Smart Plug**, **Data Ingestion (AM)**, **ML Pipeline**, **Web Dashboard**, and **Digital Twin**. 
+This schema defines the interface between the **Virtual Smart Plug**, **Data Ingestion**, **ML Pipeline**, **Web Dashboard**, and **Digital Twin**. 
 
 > [!IMPORTANT]
 > **Governance:** No fields are to be added or removed without a formal team discussion.
