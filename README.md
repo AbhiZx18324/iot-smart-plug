@@ -19,7 +19,7 @@ To simplify deployment and demonstrations, the project uses a **software-defined
 ---
 
 ## System Architecture (High-Level)
-```
+```mermaid
 graph TD
     A[Virtual Smart Plug] -->|MQTT| B[Data Ingestion Backend]
     B --> C[(Time-Series Database)]
