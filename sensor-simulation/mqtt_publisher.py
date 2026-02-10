@@ -7,7 +7,7 @@ from datetime import datetime, timezone
 import paho.mqtt.client as mqtt
 
 from signal_generator import SmartPlugSimulator
-
+from usage_scheduler import UsageScheduler
 
 BROKER_ADDRESS = "localhost"
 BROKER_PORT = 1884
@@ -23,6 +23,7 @@ class SmartPlugMQTTPublisher:
             appliance_name=appliance_name,
             plug_id=plug_id
         )
+        self.scheduler = UsageScheduler(appliance_name)
 
         self.client = mqtt.Client(client_id=plug_id)
 
@@ -60,29 +61,9 @@ class SmartPlugMQTTPublisher:
 
         try:
             while True:
-                sample = self.simulator.sample()
+                self.scheduler.update(self.simulator)
 
-                message = {
-                    "plug_id": sample["plug_id"],
-                    "timestamp": datetime.now(timezone.utc).isoformat(),
-
-                    "electrical": {
-                        "voltage_rms": sample["voltage_rms"],
-                        "current_rms": sample["current_rms"],
-                        "power_active": sample["power_active"],
-                        "frequency": sample["frequency"]
-                    },
-
-                    "state": {
-                        "relay": sample["relay"],
-                        "appliance_truth": sample["appliance_truth"]
-                    }
-                }
-
-                payload = json.dumps(message)
-                self.client.publish(self.topic, payload)
-
-                print(f"[PUBLISHED] {payload}")
+                self.publish_once()
                 time.sleep(PUBLISH_INTERVAL)
 
         except KeyboardInterrupt:
@@ -98,8 +79,8 @@ class SmartPlugMQTTPublisher:
 
 if __name__ == "__main__":
     publisher = SmartPlugMQTTPublisher(
-        plug_id="plug_001",
-        appliance_name="fan"
+        plug_id="plug_002_sim",
+        appliance_name="laptop"
     )
 
     publisher.connect()
