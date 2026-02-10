@@ -20,21 +20,12 @@ To simplify deployment and demonstrations, the project uses a **software-defined
 
 ## System Architecture (High-Level)
 
-Virtual Smart Plug
-        |
-        | (MQTT)
-        v
-Data Ingestion Backend
-        |
-        |-- Time-Series Database
-        |-- Metadata Database
-        |
-        v
-Machine Learning Pipeline
-        |
-        v
-    Web Dashboard
-
+graph TD
+    A[Virtual Smart Plug] -->|MQTT| B[Data Ingestion Backend]
+    B --> C[(Time-Series Database)]
+    B --> D[(Metadata Database)]
+    B --> E[Machine Learning Pipeline]
+    E --> F[Web Dashboard]
 
 ---
 
