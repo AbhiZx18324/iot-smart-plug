@@ -21,11 +21,20 @@ To simplify deployment and demonstrations, the project uses a **software-defined
 ## System Architecture (High-Level)
 ```mermaid
 graph TD
-    A[Virtual Smart Plug] -->|MQTT| B[Data Ingestion Backend]
-    B --> C[(Time-Series Database)]
-    B --> D[(Metadata Database)]
-    B --> E[Machine Learning Pipeline]
-    E --> F[Web Dashboard]
+    A[Virtual Smart Plug (Edge)] -->|MQTT Telemetry| B[MQTT Broker]
+
+    B --> C[Backend Ingestion Service]
+    B --> D[ML Inference Service]
+
+    C --> E[(Time-Series DB)]
+    C --> F[(Metadata DB)]
+
+    D -->|MQTT Inference| B
+    D -->|Prediction Log| F
+
+    B --> G[Web Dashboard]
+    G --> E
+    G --> F
 ```
 ---
 
@@ -83,4 +92,5 @@ By breaking down electricity consumption by appliance, users can:
 
 ## Notes
 - The virtual smart plug is designed to closely mirror real hardware sensors.
+
 - The system architecture allows seamless replacement with physical sensors in the future.
