@@ -21,7 +21,7 @@ To simplify deployment and demonstrations, the project uses a **software-defined
 ## System Architecture (High-Level)
 ```mermaid
 graph TD
-    A[Virtual Smart Plug (Edge)] -->|MQTT Telemetry| B[MQTT Broker]
+    A[Virtual Smart Plug] -->|MQTT Telemetry| B[MQTT Broker]
 
     B --> C[Backend Ingestion Service]
     B --> D[ML Inference Service]
@@ -94,3 +94,4 @@ By breaking down electricity consumption by appliance, users can:
 - The virtual smart plug is designed to closely mirror real hardware sensors.
 
 - The system architecture allows seamless replacement with physical sensors in the future.
+
