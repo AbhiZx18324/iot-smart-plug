@@ -11,7 +11,7 @@ The backend **must not** perform ML inference or feature extraction at this stag
 ### 2. MQTT Subscription Requirements
 
 * Broker: Mosquitto
-* Port: `1884` (development)
+* Port: `1883` (development)
 * Subscription topic:
 
   ```
