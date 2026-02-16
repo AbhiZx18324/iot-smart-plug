@@ -10,7 +10,7 @@ from signal_generator import SmartPlugSimulator
 from usage_scheduler import UsageScheduler
 
 BROKER_ADDRESS = "127.0.0.1"
-BROKER_PORT = 1883
+BROKER_PORT = 1884
 PUBLISH_INTERVAL = 1  # seconds
 
 
@@ -79,8 +79,8 @@ class SmartPlugMQTTPublisher:
 
 if __name__ == "__main__":
     publisher = SmartPlugMQTTPublisher(
-        plug_id="plug_002_sim",
-        appliance_name="laptop"
+        plug_id="plug_001_sim",
+        appliance_name="ac"
     )
 
     publisher.connect()
