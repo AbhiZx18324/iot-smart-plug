@@ -5,6 +5,9 @@ import joblib
 import paho.mqtt.client as mqtt
 
 from window_processor import SlidingWindowProcessor
+from collections import deque, defaultdict
+
+prediction_history = defaultdict(lambda: deque(maxlen=5))
 
 BROKER = "localhost"
 PORT = 1884
@@ -37,6 +40,9 @@ def on_message(client, userdata, msg):
         timestamp = payload["timestamp"]
         power = payload["electrical"]["power_active"]
 
+        if power < 2:   # threshold watts for silence
+            return
+
         processor = processors[plug_id]
         features = processor.add_sample(timestamp, power)
 
@@ -47,7 +53,13 @@ def on_message(client, userdata, msg):
         prediction = model.predict(feature_vector)[0]
         confidence = max(model.predict_proba(feature_vector)[0])
 
-        publish_prediction(client, plug_id, timestamp, prediction, confidence)
+        hist = prediction_history[plug_id]
+        hist.append(prediction)
+
+        stable_prediction = max(set(hist), key=hist.count)
+        stability = hist.count(stable_prediction) / len(hist)
+
+        publish_prediction(client, plug_id, timestamp, stable_prediction, stability)
 
     except Exception as e:
         print("[ML ERROR]", e)
