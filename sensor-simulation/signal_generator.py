@@ -10,8 +10,8 @@ from profile_sampler import sample_fan
 
 class SmartPlugSimulator:
     def __init__(self, appliance_name, plug_id="plug_001"):
-        self.profile = APPLIANCE_PROFILES[appliance_name]
-        # self.profile = sample_fan()
+        # self.profile = APPLIANCE_PROFILES[appliance_name]
+        self.profile = sample_fan()
         self.appliance_name = appliance_name
         self.plug_id = plug_id
 

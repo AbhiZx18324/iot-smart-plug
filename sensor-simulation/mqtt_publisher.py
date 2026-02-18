@@ -80,7 +80,7 @@ class SmartPlugMQTTPublisher:
 if __name__ == "__main__":
     publisher = SmartPlugMQTTPublisher(
         plug_id="plug_001_sim",
-        appliance_name="ac"
+        appliance_name="fan"
     )
 
     publisher.connect()
