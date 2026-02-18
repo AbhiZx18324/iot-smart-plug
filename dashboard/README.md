@@ -60,9 +60,3 @@ npm run dev
 The dashboard will be available at `http://localhost:5173`.
 
 ---
-
-## Definition of Done
-- [ ] Successfully connects to MQTT via WebSockets.
-- [ ] Displays live power consumption graphs.
-- [ ] Shows the "Current Appliance" label based on ML inference.
-- [ ] Fetches and renders historical data from InfluxDB.
