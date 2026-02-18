@@ -214,7 +214,7 @@ python backend/ingestion_service.py
 **Terminal 2 (Start the Simulator):**
 
 ```bash
-python backend/mqtt_publisher.py
+python sensor-simulation/mqtt_publisher.py
 ```
 
 #### Step 6: View Live Data

@@ -22,7 +22,7 @@ logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s [%(levelname)s] %(message)s",
     handlers=[
-        logging.FileHandler("backend/ingestion.log"),  # Saves to file
+        logging.FileHandler("./backend/ingestion.log"),  # Saves to file
         logging.StreamHandler()                # Prints to terminal
     ]
 )
