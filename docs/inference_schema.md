@@ -14,10 +14,11 @@ Consumed by: Backend + dashboard
 ```json
 {
   "plug_id": "plug_001",
-  "timestamp": "ISO-8601 UTC",
-  "predicted_appliance": "fan",
-  "confidence": 0.87,
-  "model_version": "v1.0"
+  "timestamp": "ISO-8601 UTC", 
+  "load_class": "BASE_LOAD",
+  "confidence": 0.69,
+  "stability": 0.79,
+  "model_version": "v2.0-behavior"
 }
 ```
 
