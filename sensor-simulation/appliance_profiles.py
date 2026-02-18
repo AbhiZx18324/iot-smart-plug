@@ -1,35 +1,35 @@
-# appliance_profiles.py
-
 APPLIANCE_PROFILES = {
+
     "fan": {
-        "rated_power": 75,              # Watts
-        "turn_on_spike_factor": 1.4,
-        "transient_duration": 2.0,       # seconds
-        "steady_noise_sigma": 0.05,      # 5%
-        "duty_cycle": "continuous"
+        "type": "motor",
+        "rated_power": 75,
+        "startup_spike": 1.8,
+        "startup_duration": 2,
+        "variance": 0.03
+    },
+
+    "kettle": {
+        "type": "resistive",
+        "rated_power": 1500,
+        "variance": 0.01
     },
 
     "laptop": {
+        "type": "smps",
         "rated_power": 65,
-        "turn_on_spike_factor": 1.6,
-        "transient_duration": 3.0,
-        "steady_noise_sigma": 0.10,
-        "duty_cycle": "variable"
-    },
-
-    "led_bulb": {
-        "rated_power": 10,
-        "turn_on_spike_factor": 1.05,
-        "transient_duration": 0.5,
-        "steady_noise_sigma": 0.02,
-        "duty_cycle": "continuous"
+        "variance": 0.12,
+        "burst_prob": 0.2
     },
 
     "ac": {
-        "rated_power": 1500,
-        "turn_on_spike_factor": 2.5,
-        "transient_duration": 5.0,
-        "steady_noise_sigma": 0.15,
-        "duty_cycle": "cyclic"
+        "type": "compressor",
+        "rated_power": 1400,
+        "standby_power": 8,
+        "startup_spike": 2.5,
+        "startup_duration": 3,
+        "cycle_on": (40, 90),   # seconds range
+        "cycle_off": (20, 60),
+        "variance": 0.03
     }
 }
+
