@@ -89,15 +89,16 @@ class SmartPlugSimulator:
         if elapsed < profile["settling_time"]:
             power = steady + (spike - steady) * math.exp(-elapsed / tau)
         else:
-            if not hasattr(self, "motor_state"):
-                self.motor_state = steady
+            if not hasattr(self, "motor_phase"):
+                self.motor_phase = random.uniform(0, 2*math.pi)
 
-            target = steady + random.gauss(0, profile["steady_noise"])
+            # slow torque ripple (mechanical wobble)
+            self.motor_phase += 0.3
+            ripple = 0.03 * steady * math.sin(self.motor_phase)
 
-            alpha = 0.2  # inertia factor (0 = frozen, 1 = instant change)
-            self.motor_state += alpha * (target - self.motor_state)
-
-            power = self.motor_state
+            # electrical fluctuation
+            jitter = random.gauss(0, profile["steady_noise"] * 2.5)
+            power = steady + ripple + jitter
 
         return max(power, 0)
 
