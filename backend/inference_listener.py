@@ -14,7 +14,7 @@ def on_message(client, userdata, msg):
 
     print(
         f"[Inference] {data['plug_id']} → "
-        f"{data['predicted_appliance']} "
+        f"{data['load_class']} "
         f"(conf {data['confidence']:.2f})"
     )
 

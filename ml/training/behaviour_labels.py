@@ -9,7 +9,7 @@ BEHAVIOR_LABEL_MAP2 = {
     "Incandescent Light Bulb": "LIGHTING_LOADS",
     "Microwave": "THERMAL_APPLIANCES",
     "Laptop": "SMALL_MOTOR_ELECTRONICS",
-    "Compact Fluorescent Lamp": "LIGHTING LOADS"
+    "Compact Fluorescent Lamp": "LIGHTING_LOADS"
 }
 
 BEHAVIOR_LABEL_MAP = {
