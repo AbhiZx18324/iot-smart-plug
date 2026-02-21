@@ -5,7 +5,6 @@ import joblib
 import paho.mqtt.client as mqtt
 
 from window_processor import SlidingWindowProcessor
-# from load_classes import ID2LABEL, LOAD_CLASS_MAP
 
 # ---------------- CONFIG ---------------- #
 
