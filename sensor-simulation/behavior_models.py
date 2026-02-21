@@ -25,20 +25,36 @@ class LightingLoad:
             return max(steady + transient, 0)
         return max(steady, 0)
 
-class SmallMotorElectronics:
-    """
-    Matched to stats: mean~137W, std~3.2, spike~1.35, settle~5s
-    """
+class LowPowerMotorElectronics:
+    """For Fans and Laptops (20W - 80W)"""
     def __init__(self):
-        self.power = sample_positive(137, 260, 15)
-        self.noise = sample_positive(3.2, 4.3)
-        self.spike = sample_positive(1.35, 0.58, 1.0)
-        self.settle = bounded_int(5, 4.9)
-        self.phase = random.uniform(0, 2*math.pi)
+        self.power = sample_positive(45, 15, 15) # Mean 45W, Std 15W
+        self.noise = sample_positive(1.5, 1.0)
+        self.spike = sample_positive(1.2, 0.2, 1.0)
+        self.settle = bounded_int(3, 1.0)
+        self.phase = random.uniform(0, 2 * 3.14159)
 
     def step(self, t):
         self.phase += 0.25
-        # Keep mechanical ripple small and within standard deviation limits
+        ripple = (self.noise * 0.5) * math.sin(self.phase)
+        steady = self.power + ripple + random.gauss(0, self.noise * 0.5)
+        
+        if t < self.settle:
+            transient = self.power * (self.spike - 1.0) * math.exp(-t / (self.settle / 3))
+            return max(steady + transient, 0)
+        return max(steady, 0)
+
+class HighPowerMotor:
+    """For Vacuum Cleaners (~800W - 1400W)"""
+    def __init__(self):
+        self.power = sample_positive(1100, 200, 600) # Mean 1100W, Std 200W
+        self.noise = sample_positive(15.0, 5.0)
+        self.spike = sample_positive(1.6, 0.4, 1.0)
+        self.settle = bounded_int(6, 2.0)
+        self.phase = random.uniform(0, 2 * 3.14159)
+
+    def step(self, t):
+        self.phase += 0.4 # Faster ripple for high speed motors
         ripple = (self.noise * 0.5) * math.sin(self.phase)
         steady = self.power + ripple + random.gauss(0, self.noise * 0.5)
         
@@ -65,31 +81,55 @@ class ThermalAppliance:
             return max(steady + transient, 0)
         return max(steady, 0)
 
-class HVACRefrigeration:
-    """
-    Matched to stats: mean~670W, std~24.8, spike~2.57, settle~13.5s
-    Fixed the time.time() bug to restore 10Hz resolution transient.
-    """
+class Refrigerator:
+    """Matched to typical Fridge: ~200W steady, big compressor spike"""
     def __init__(self):
-        self.power = sample_positive(670, 1119, 50)
-        self.noise = sample_positive(24.8, 96)
-        self.spike = sample_positive(2.57, 2.39, 1.1)
-        self.settle = bounded_int(13.5, 10)
+        self.power = sample_positive(200, 50, 100) 
+        self.noise = sample_positive(5.0, 2.0)
+        self.spike = sample_positive(3.0, 0.8, 1.5) # High inrush current
+        self.settle = bounded_int(8, 2.0)
         
         self.on_duration = random.randint(20, 60)
         self.off_duration = random.randint(20, 60)
 
     def step(self, t):
         cycle = t % (self.on_duration + self.off_duration)
-        
         if cycle > self.on_duration:
             return random.uniform(0, 5)  # Standby
-        
+            
         steady = self.power + random.gauss(0, self.noise)
         if cycle < self.settle:
             transient = self.power * (self.spike - 1.0) * math.exp(-cycle / (self.settle / 3))
             return max(steady + transient, 0)
         return max(steady, 0)
+
+class AirConditioner:
+    """Matched strictly to 120V Window ACs in the PLAID Dataset"""
+    def __init__(self):
+        # 1. Steady state set to a typical window AC load
+        self.power = sample_positive(650, 100, 400) 
+        self.noise = sample_positive(15.0, 5.0)
+        
+        # 2. CRITICAL FIX: Drastically reduce the spike multiplier.
+        # A 650W AC * 1.8 spike = ~1170W peak, which perfectly matches PLAID.
+        self.spike = sample_positive(1.8, 0.2, 1.2) 
+        
+        # 3. Faster settle time (window AC compressors spin up quickly)
+        self.settle = bounded_int(10, 2.0)
+        
+        self.on_duration = random.randint(40, 120)
+        self.off_duration = random.randint(20, 60)
+
+    def step(self, t):
+        cycle = t % (self.on_duration + self.off_duration)
+        if cycle > self.on_duration:
+            return random.uniform(0, 5)  # Standby
+            
+        steady = self.power + random.gauss(0, self.noise)
+        if cycle < self.settle:
+            transient = self.power * (self.spike - 1.0) * math.exp(-cycle / (self.settle / 3))
+            return max(steady + transient, 0)
+        return max(steady, 0)    
 
 class LaundryAppliance:
     """

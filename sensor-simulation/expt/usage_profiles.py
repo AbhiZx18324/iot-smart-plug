@@ -16,24 +16,9 @@ USAGE_PROFILES = {
         "mean_off_time": 60
     },
 
-    "Hairdryer": {
+    "Vacuum": {
         "mean_on_time": 60,
         "mean_off_time": 60
-    },
-
-    "Microwave": {
-        "mean_on_time": 60,
-        "mean_off_time": 180
-    },
-
-    "Vacuum": {
-        "mean_on_time": 120,
-        "mean_off_time": 180
-    },
-
-    "Washing Machine": {
-        "mean_on_time": 120,
-        "mean_off_time": 180
     },
 
     "Compact Fluorescent Lamp": {
@@ -42,16 +27,6 @@ USAGE_PROFILES = {
     },
 
     "Air Conditioner": {
-        "mean_on_time": 600,
-        "mean_off_time": 300
-    },
-
-    "Fridge": {
-        "mean_on_time": 600,
-        "mean_off_time": 100
-    },
-
-    "Heater": {
         "mean_on_time": 600,
         "mean_off_time": 300
     }

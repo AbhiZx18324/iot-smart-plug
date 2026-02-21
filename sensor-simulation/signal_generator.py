@@ -1,30 +1,30 @@
 import time
 import numpy as np
 
-from behavior_models import (
-    LightingLoad,
-    SmallMotorElectronics,
-    ThermalAppliance,
-    HVACRefrigeration,
-    LaundryAppliance
+from expt.behavior_models import (
+    ArchetypeLighting,
+    ArchetypeSmallMotor,
+    ArchetypeThermal,
+    ArchetypeHVAC,
+    ArchetypeLaundry
 )
 
 APPLIANCE_CLASS_MAP = {
-    "Fan": SmallMotorElectronics,
-    "Vacuum": SmallMotorElectronics,
-    "Laptop": SmallMotorElectronics,
+    "Fan": ArchetypeSmallMotor,
+    "Vacuum": ArchetypeSmallMotor,
+    "Laptop": ArchetypeSmallMotor,
 
-    "Incandescent Light Bulb": LightingLoad,
-    "Compact Fluorescent Lamp": LightingLoad,
+    "Incandescent Light Bulb": ArchetypeLighting,
+    "Compact Fluorescent Lamp": ArchetypeLighting,
 
-    "Heater": ThermalAppliance,
-    "Microwave": ThermalAppliance,
-    "Hairdryer": ThermalAppliance,
+    "Heater": ArchetypeThermal,
+    "Microwave": ArchetypeThermal,
+    "Hairdryer": ArchetypeThermal,
 
-    "Fridge": HVACRefrigeration,
-    "Air Conditioner": HVACRefrigeration,
+    "Fridge": ArchetypeHVAC,
+    "Air Conditioner": ArchetypeHVAC,
 
-    "Washing Machine": LaundryAppliance
+    "Washing Machine": ArchetypeLaundry
 }
 
 
