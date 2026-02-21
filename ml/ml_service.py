@@ -77,9 +77,9 @@ def compute_load_class(plug_id, feature_vector):
         for lc in belief_state[plug_id]:
             belief_state[plug_id][lc] *= DECAY
 
-    print("[ML] instant_scores: ", instant_scores)
-    print("[ML] belief_count: ", belief_count)
-    print("[ML] belief_state: ", belief_state)
+    # print("[ML] instant_scores: ", instant_scores)
+    # print("[ML] belief_count: ", belief_count)
+    # print("[ML] belief_state: ", belief_state)
 
     # normalize belief
     total = sum(belief_state[plug_id].values())
@@ -121,7 +121,16 @@ def on_message(client, userdata, msg):
         plug_id = payload["plug_id"]
         timestamp = payload["timestamp"]
         power = payload["electrical"]["power_active"]
+        relay_state = payload.get("state", {}).get("relay", "ON")
 
+        if relay_state == "OFF":
+            if plug_id in processors: del processors[plug_id]
+            if plug_id in belief_state: del belief_state[plug_id]
+            if plug_id in belief_count: del belief_count[plug_id]
+            
+            publish_prediction(client, plug_id, timestamp, "OFF", 1.0, 1.0)
+            return
+        
         # ignore OFF state / near zero power
         if power < 2:
             return
@@ -133,7 +142,7 @@ def on_message(client, userdata, msg):
             return
 
         feature_vector = [list(features.values())]
-        print(feature_vector)
+        print("[ML FEATURES]", feature_vector)
         load_class, confidence, stability = compute_load_class(plug_id, feature_vector)
         print(f"[RAW PRED] load: {load_class}\tconf: {confidence}\tstab: {stability}")
 

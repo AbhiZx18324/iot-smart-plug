@@ -11,7 +11,7 @@ from usage_scheduler import UsageScheduler
 
 BROKER_ADDRESS = "127.0.0.1"
 BROKER_PORT = 1884
-PUBLISH_INTERVAL = 1  # seconds
+PUBLISH_INTERVAL = 0.1  # seconds
 
 
 class SmartPlugMQTTPublisher:
@@ -78,9 +78,13 @@ class SmartPlugMQTTPublisher:
             self.client.disconnect()
 
 if __name__ == "__main__":
+        
     publisher = SmartPlugMQTTPublisher(
         plug_id="plug_001_sim",
-        appliance_name="fan"
+        # appliance_name="Incandescent Light Bulb"
+        appliance_name="Compact Fluorescent Lamp"
+        # appliance_name="Fan"
+        # appliance_name="Air Conditioner"
     )
 
     publisher.connect()

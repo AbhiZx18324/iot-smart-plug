@@ -1,23 +1,29 @@
 # usage_profiles.py
 
 USAGE_PROFILES = {
-    "fan": {
+    "Fan": {
         "mean_on_time": 300,    # seconds (5 min)
         "mean_off_time": 120
     },
 
-    "laptop": {
+    "Laptop": {
         "mean_on_time": 180,
         "mean_off_time": 90
     },
 
-    "led_bulb": {
+    "Incandescent Light Bulb": {
         "mean_on_time": 60,
         "mean_off_time": 60
     },
 
-    "ac": {
+    "Compact Fluorescent Lamp": {
+        "mean_on_time": 60,
+        "mean_off_time": 60
+    },
+
+    "Air Conditioner": {
         "mean_on_time": 600,
         "mean_off_time": 300
     }
 }
+
