@@ -1,10 +1,13 @@
 ## MQTT Topic
 
-```
-smartplug/{plug_id}/inference
+
 ```
 
-Published by: ML service
+smartplug/{plug_id}/inference
+
+```
+
+Published by: ML service<br>
 Consumed by: Backend + dashboard
 
 ---
@@ -15,24 +18,26 @@ Consumed by: Backend + dashboard
 {
   "plug_id": "plug_001",
   "timestamp": "ISO-8601 UTC", 
-  "load_class": "BASE_LOAD",
-  "confidence": 0.69,
-  "stability": 0.79,
+  "load_class": "THERMAL_APPLIANCES",
+  "confidence": 0.97,
+  "stability": 1.0,
   "model_version": "v2.0-behavior"
 }
+
 ```
 
 ---
 
 ## Field Meaning
 
-| Field               | Meaning                              |
-| ------------------- | ------------------------------------ |
-| plug_id             | device identity                      |
-| timestamp           | timestamp of last sample in window   |
-| predicted_appliance | most likely appliance class          |
-| confidence          | probability estimate from classifier |
-| model_version       | classifier used for traceability     |
+| Field | Meaning |
+| --- | --- |
+| plug_id | device identity |
+| timestamp | timestamp of the last sample in the sliding window |
+| load_class | the predicted appliance macro-class (or "OFF") |
+| confidence | instantaneous probability estimate from the classifier (0.0 to 1.0) |
+| stability | belief maturity based on rolling temporal window (0.0 to 1.0) |
+| model_version | classifier version used for traceability |
 
 ---
 
@@ -40,11 +45,11 @@ Consumed by: Backend + dashboard
 
 The ML service guarantees:
 
-* One prediction per sliding window
-* Predictions independent of database state
-* No inference when device OFF
-* Confidence ∈ [0,1]
-* Stateless across restarts (relearns from stream)
+* One prediction per sliding window (once the buffer fills)
+* Predictions are independent of the backend database state
+* **Explicit OFF signaling:** When the device relay is switched off, the service publishes exactly one payload with `load_class: "OFF"`, `confidence: 1.0`, and `stability: 1.0` to signal the end of a session.
+* Confidence and Stability ∈ [0,1]
+* Stateless across restarts (it completely relearns from the live stream)
 
 ---
 
@@ -53,11 +58,11 @@ The ML service guarantees:
 Backend may:
 
 * log predictions
-* aggregate sessions
-* correlate with telemetry
+* aggregate usage sessions based on class shifts or "OFF" messages
+* correlate inferences with raw electrical telemetry
 
 Backend must NOT:
 
-* reinterpret confidence
-* smooth predictions
-* infer device OFF from silence
+* reinterpret or recalculate confidence
+* smooth predictions (temporal smoothing is already handled natively by the ML service's belief state)
+* infer device OFF from silence (wait for the explicit `load_class: "OFF"` message)
