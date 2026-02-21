@@ -84,6 +84,30 @@ def main():
 
     except KeyboardInterrupt:
         print("\n[TEST] Stopping simulators...")
+        
+        for dev in devices:
+            dev.turn_off()
+            print(f"[TEST] Turned OFF: {dev.appliance_name} ({dev.plug_id})")
+            raw_sample = dev.sample()  
+            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
+            
+            telemetry = {
+                "plug_id": raw_sample["plug_id"],
+                "timestamp": now_iso,
+                "electrical": {
+                    "voltage_rms": raw_sample["voltage_rms"],
+                    "current_rms": raw_sample["current_rms"],
+                    "power_active": raw_sample["power_active"],
+                    "frequency": raw_sample["frequency"]
+                },
+                "state": {
+                    "relay": raw_sample["relay"],
+                    "appliance_truth": raw_sample["appliance_truth"]
+                }
+            }
+            
+            topic = PUBLISH_TOPIC_TEMPLATE.format(dev.plug_id)
+            client.publish(topic, json.dumps(telemetry))
     finally:
         client.loop_stop()
         client.disconnect()

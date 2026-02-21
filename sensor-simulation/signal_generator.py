@@ -1,7 +1,7 @@
 import time
 import numpy as np
 
-from expt.behavior_models import (
+from behavior_models import (
     ArchetypeLighting,
     ArchetypeSmallMotor,
     ArchetypeThermal,
