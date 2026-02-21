@@ -6,26 +6,28 @@ Instead of relying on complex, heavy deep learning models, our approach focuses 
 
 ## Directory Structure & File Overview
 
-* **`ml_service.py`**: The core MQTT subscriber and inference engine. It listens to live smart plug telemetry, manages feature buffers, and publishes predictions back to the broker.
-* **`window_processor.py`**: The feature extraction engine. It maintains a rolling buffer of power readings and computes 11 statistical/temporal features (mean, std_dev, spike_count, oscillations, etc.).
-* **`test_window.py`**: A quick script to validate the sliding window logic and feature shapes.
-* **`models/`**:
-* `behaviour_classifier.pkl`: The trained Random Forest model.
-* `model_config.json`: The mapping of integer IDs to string labels (e.g., `1 -> HVAC_REFRIGERATION`).
+- **`ml_service.py`**: The core MQTT subscriber and inference engine. It listens to live smart plug telemetry, manages feature buffers, and publishes predictions back to the broker.
+- **`window_processor.py`**: The feature extraction engine. It maintains a rolling buffer of power readings and computes 11 statistical/temporal features (mean, std_dev, spike_count, oscillations, etc.).
+- **`test_window.py`**: A quick script to validate the sliding window logic and feature shapes.
+
+- **`models/`**:
+    - `behaviour_classifier.pkl`: The trained Random Forest model.
+    - `model_config.json`: The mapping of integer IDs to string labels (e.g., `1 -> HVAC_REFRIGERATION`).
 
 
-* **`training/`**:
-* `plaid_adapter.py`: A crucial utility that downsamples high-frequency waveforms into smart-plug-compatible signals.
-* `training.ipynb`: The main notebook where data is parsed, features are engineered, and the model is trained.
-* `plaid_stats.ipynb`: Notebook used to extract the physical statistics of appliances (means, std_devs, transient spikes) to help build our upstream simulator.
+- **`training/`**:
+    - `plaid_adapter.py`: A crucial utility that downsamples high-frequency waveforms into smart-plug-compatible signals.
+    - `training.ipynb`: The main notebook where data is parsed, features are engineered, and the model is trained.
+    - `plaid_stats.ipynb`: Notebook used to extract the physical statistics of appliances (means, std_devs, transient spikes) to help build our upstream simulator.
 
 
 
-## 🏗️ Core Architecture & Engineering Decisions
+## Core Architecture & Engineering Decisions
 
 ### 1. Domain Adaptation: The `plaid_adapter.py`
 
 *The Problem:* The PLAID dataset was recorded at **30,000 Hz** (capturing high-frequency current/voltage waveforms). However, cheap ESP32-based smart plugs only output active power readings at roughly **10 Hz**.
+
 *The Solution:* We built a software adapter that mathematically simulates a smart plug's metering IC. It calculates instantaneous power, extracts the cycle RMS envelope, applies a smoothing convolution, and downsamples the data to 10 Hz.  This completely eliminates the domain mismatch between our training data and our deployment environment.
 
 ### 2. The Sliding Window Processor

@@ -1,4 +1,4 @@
-# 🔌 Smart Plug Sensor Simulation Engine
+# Smart Plug Sensor Simulation Engine
 
 This module is the data-generation backbone for our IoT analytics pipeline. It simulates 10 Hz high-resolution electrical telemetry (Voltage, Current, Active Power) for various household appliances and publishes the data streams to a local MQTT broker.
 
