@@ -2,7 +2,7 @@
 
 import time
 import random
-from usage_profiles import USAGE_PROFILES
+from .usage_profiles import USAGE_PROFILES
 
 
 class UsageScheduler:

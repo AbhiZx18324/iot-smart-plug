@@ -1,4 +1,4 @@
-from window_processor import SlidingWindowProcessor
+from .window_processor import SlidingWindowProcessor
 import random
 import time
 

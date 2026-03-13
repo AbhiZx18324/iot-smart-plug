@@ -4,7 +4,8 @@ from collections import defaultdict
 import joblib
 import paho.mqtt.client as mqtt
 
-from window_processor import SlidingWindowProcessor
+from .window_processor import SlidingWindowProcessor
+from .anomaly_detector import AnomalyDetector
 
 # ---------------- CONFIG ---------------- #
 
@@ -17,6 +18,7 @@ INFERENCE_TOPIC_TEMPLATE = "smartplug/{}/inference"
 MODEL_PATH = "ml/models/behaviour_classifier.pkl"
 MODEL_VERSION = "v2.0-behavior"
 CONFIG_PATH = "ml/models/model_config.json"
+ANOMALY_CONFIG_PATH = "ml/baselines/baselines.json"
 
 WINDOW_SIZE = 20
 STEP_SIZE = 5
@@ -34,9 +36,14 @@ print("[ML] Model loaded")
 print("[ML] Loading config file...")
 with open(CONFIG_PATH, 'r') as f:
     js = json.load(f)
-
+LABEL2ID = js['label2id']
 ID2LABEL = js['id2label']
 print("[ML] Config file loaded")
+
+print("[ML] Loading anomaly detector...")
+detector = AnomalyDetector(ANOMALY_CONFIG_PATH)
+print("[ML] Anomaly detector loaded")
+
 
 # per-device sliding feature windows
 processors = defaultdict(lambda: SlidingWindowProcessor(WINDOW_SIZE, STEP_SIZE))
@@ -144,6 +151,12 @@ def on_message(client, userdata, msg):
         print("[ML FEATURES]", feature_vector)
         load_class, confidence, stability = compute_load_class(plug_id, feature_vector)
         print(f"[RAW PRED] load: {load_class}\tconf: {confidence}\tstab: {stability}")
+
+        if confidence > 0.5 and stability > 0.8:
+            is_anom, score = detector.is_anomaly(feature_vector[0], load_class)
+            print("[ANOMALY SCORE] ", score)
+            if is_anom:
+                print(f"[ANOMALY] {plug_id} → {load_class} score={score:.2f}")
 
         publish_prediction(client, plug_id, timestamp, load_class, confidence, stability)
 

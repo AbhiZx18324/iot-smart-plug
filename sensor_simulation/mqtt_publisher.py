@@ -2,12 +2,11 @@
 
 import json
 import time
-from datetime import datetime, timezone
 
 import paho.mqtt.client as mqtt
 
-from signal_generator import SmartPlugSimulator
-from usage_scheduler import UsageScheduler
+from .signal_generator import SmartPlugSimulator
+from .usage_scheduler import UsageScheduler
 
 BROKER_ADDRESS = "127.0.0.1"
 BROKER_PORT = 1884
@@ -36,7 +35,7 @@ class SmartPlugMQTTPublisher:
 
         message = {
             "plug_id": sample["plug_id"],
-            "timestamp": datetime.now(timezone.utc).isoformat(),
+            "timestamp": sample["timestamp"],
 
             "electrical": {
                 "voltage_rms": sample["voltage_rms"],

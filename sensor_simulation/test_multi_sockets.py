@@ -2,7 +2,7 @@ import time
 import json
 import datetime
 import paho.mqtt.client as mqtt
-from signal_generator import SmartPlugSimulator
+from .signal_generator import SmartPlugSimulator
 
 # --- CONFIG ---
 BROKER = "localhost"
@@ -16,11 +16,21 @@ def main():
     
     # Instantiate one device for each behavior archetype
     devices = [
-        SmartPlugSimulator("Fan", plug_id="plug_01_motor"),
-        SmartPlugSimulator("Incandescent Light Bulb", plug_id="plug_02_light"),
-        SmartPlugSimulator("Heater", plug_id="plug_03_thermal"),
-        SmartPlugSimulator("Fridge", plug_id="plug_04_hvac"),
-        SmartPlugSimulator("Washing Machine", plug_id="plug_05_laundry")
+        SmartPlugSimulator("Fan", plug_id="plug_01_motor", 
+                           fault_mode="bearing_wear",
+                           ),
+        SmartPlugSimulator("Incandescent Light Bulb", plug_id="plug_02_light",
+                           fault_mode="flicker",
+                           ),
+        SmartPlugSimulator("Heater", plug_id="plug_03_thermal",
+                           fault_mode="coil_damage",
+                           ),
+        SmartPlugSimulator("Fridge", plug_id="plug_04_hvac",
+                           fault_mode="compressor_degradation",
+                           ),
+        SmartPlugSimulator("Washing Machine", plug_id="plug_05_laundry",
+                           fault_mode="drum_imbalance",
+                           ),
     ]
 
     # Connect to MQTT
