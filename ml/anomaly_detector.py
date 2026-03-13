@@ -10,7 +10,7 @@ class AnomalyDetector:
             self.stats = {}
 
     def score(self, feature_vector, class_label):
-        """
+        r"""
         Calculates the Mean Absolute Z-Score. 
         $Z = \frac{|x - \mu|}{\sigma}$
         """

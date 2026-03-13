@@ -1,0 +1,17 @@
+# Cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Training artifacts and datasets
+training/
+*.ipynb
+
+# Test scripts
+test_*.py
+
+# Local environment variables
+.env
+venv/
+.venv/

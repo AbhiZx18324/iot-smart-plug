@@ -1,13 +1,14 @@
 import json
 import time
 import sys
+import os
 import paho.mqtt.client as mqtt
 
 from .signal_generator import SmartPlugSimulator
 from .usage_scheduler import UsageScheduler
 
-BROKER_ADDRESS = "127.0.0.1"
-BROKER_PORT = 1884
+BROKER_ADDRESS = os.getenv("MQTT_BROKER", "localhost")
+BROKER_PORT = int(os.getenv("MQTT_PORT", 1884))
 PUBLISH_INTERVAL = 0.1 
 
 class SmartPlugMQTTPublisher:

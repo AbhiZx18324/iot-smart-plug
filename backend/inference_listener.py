@@ -15,7 +15,8 @@ def on_message(client, userdata, msg):
     print(
         f"[Inference] {data['plug_id']} → "
         f"{data['load_class']} "
-        f"(conf {data['confidence']:.2f})"
+        f"(conf {data['confidence']:.2f}) "
+        f"is_anomaly: {data['is_anomaly']}"
     )
 
 client = mqtt.Client()

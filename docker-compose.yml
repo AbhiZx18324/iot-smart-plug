@@ -1,0 +1,28 @@
+version: '3.8'
+
+networks:
+  smartplug_net:
+    name: smartplug_net
+
+services:
+  mqtt_broker:
+    image: eclipse-mosquitto:2.0
+    container_name: mqtt_broker
+    ports:
+      - "1884:1884"
+    volumes:
+      - ./mosquitto.conf:/mosquitto/config/mosquitto.conf
+    networks:
+      - smartplug_net
+
+  ml_service:
+    build: 
+      context: ./ml
+    container_name: ml_service
+    environment:
+      - MQTT_BROKER=mqtt_broker
+      - MQTT_PORT=1884
+    depends_on:
+      - mqtt_broker
+    networks:
+      - smartplug_net

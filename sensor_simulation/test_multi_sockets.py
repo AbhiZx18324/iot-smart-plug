@@ -1,12 +1,13 @@
 import time
 import json
 import datetime
+import os
 import paho.mqtt.client as mqtt
 from .signal_generator import SmartPlugSimulator
 
 # --- CONFIG ---
-BROKER = "localhost"
-PORT = 1884
+BROKER = os.getenv("MQTT_BROKER", "localhost")
+PORT = int(os.getenv("MQTT_PORT", 1884))
 PUBLISH_TOPIC_TEMPLATE = "smartplug/{}/telemetry"
 TICK_RATE_HZ = 10
 TICK_INTERVAL = 1.0 / TICK_RATE_HZ

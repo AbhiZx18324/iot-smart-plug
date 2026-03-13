@@ -1,5 +1,6 @@
 import json
 from collections import defaultdict
+import os
 
 import joblib
 import paho.mqtt.client as mqtt
@@ -9,8 +10,8 @@ from .anomaly_detector import AnomalyDetector
 
 # ---------------- CONFIG ---------------- #
 
-BROKER = "localhost"
-PORT = 1884
+BROKER = os.getenv("MQTT_BROKER", "localhost")
+PORT = int(os.getenv("MQTT_PORT", 1884))
 
 TELEMETRY_TOPIC = "smartplug/+/telemetry"
 INFERENCE_TOPIC_TEMPLATE = "smartplug/{}/inference"
