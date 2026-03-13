@@ -55,12 +55,13 @@ class SmartPlugMQTTPublisher:
             self.client.disconnect()
 
 if __name__ == "__main__":
-    # Usage: python mqtt_publisher.py "ApplianceName" "OptionalFaultMode"
-    appliance = sys.argv[1] if len(sys.argv) > 1 else "Fan"
-    fault = sys.argv[2] if len(sys.argv) > 2 else None
+    # Usage: python mqtt_publisher.py "PlugID" "ApplianceName" "OptionalFaultMode"
+    plug_id = sys.argv[1] if len(sys.argv) > 1 else "plug_001_sim"
+    appliance = sys.argv[2] if len(sys.argv) > 2 else "Fan"
+    fault = sys.argv[3] if len(sys.argv) > 3 else None
 
     publisher = SmartPlugMQTTPublisher(
-        plug_id="plug_001_sim",
+        plug_id=plug_id,
         appliance_name=appliance,
         fault_mode=fault
     )

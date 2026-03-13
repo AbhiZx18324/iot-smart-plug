@@ -161,7 +161,7 @@ localhost:1884
 To simulate a single appliance:
 
 ```bash
-python -m sensor_simulation.mqtt_publisher "Fan"
+python -m sensor_simulation.mqtt_publisher "plug-001-sim" "Fan"
 ```
 
 Supported appliances:
@@ -186,7 +186,7 @@ Fault modes can be provided as an optional argument.
 ## Syntax
 
 ```bash
-python -m sensor_simulation.mqtt_publisher "ApplianceName" "FaultMode"
+python -m sensor_simulation.mqtt_publisher "PlugID" "ApplianceName" "FaultMode"
 ```
 
 ## Examples
@@ -194,25 +194,25 @@ python -m sensor_simulation.mqtt_publisher "ApplianceName" "FaultMode"
 Normal fan behavior
 
 ```bash
-python -m sensor_simulation.mqtt_publisher "Fan"
+python -m sensor_simulation.mqtt_publisher "plug-001-sim" "Fan"
 ```
 
 Fan with bearing wear
 
 ```bash
-python -m sensor_simulation.mqtt_publisher "Fan" "bearing_wear"
+python -m sensor_simulation.mqtt_publisher "plug-002-sim" "Fan" "bearing_wear"
 ```
 
 Lighting flicker
 
 ```bash
-python -m sensor_simulation.mqtt_publisher "Incandescent Light Bulb" "flicker"
+python -m sensor_simulation.mqtt_publisher "plug-003-sim" "Incandescent Light Bulb" "flicker"
 ```
 
 Heating coil degradation
 
 ```bash
-python -m sensor_simulation.mqtt_publisher "Heater" "coil_damage"
+python -m sensor_simulation.mqtt_publisher "plug-004-sim" "Heater" "coil_damage"
 ```
 
 ---
