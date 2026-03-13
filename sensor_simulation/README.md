@@ -161,7 +161,7 @@ localhost:1884
 To simulate a single appliance:
 
 ```bash
-python mqtt_publisher.py "Fan"
+python -m sensor_simulation.mqtt_publisher "Fan"
 ```
 
 Supported appliances:
@@ -186,7 +186,7 @@ Fault modes can be provided as an optional argument.
 ## Syntax
 
 ```bash
-python mqtt_publisher.py "ApplianceName" "FaultMode"
+python -m sensor_simulation.mqtt_publisher "ApplianceName" "FaultMode"
 ```
 
 ## Examples
@@ -194,25 +194,25 @@ python mqtt_publisher.py "ApplianceName" "FaultMode"
 Normal fan behavior
 
 ```bash
-python mqtt_publisher.py "Fan"
+python -m sensor_simulation.mqtt_publisher "Fan"
 ```
 
 Fan with bearing wear
 
 ```bash
-python mqtt_publisher.py "Fan" "bearing_wear"
+python -m sensor_simulation.mqtt_publisher "Fan" "bearing_wear"
 ```
 
 Lighting flicker
 
 ```bash
-python mqtt_publisher.py "Incandescent Light Bulb" "flicker"
+python -m sensor_simulation.mqtt_publisher "Incandescent Light Bulb" "flicker"
 ```
 
 Heating coil degradation
 
 ```bash
-python mqtt_publisher.py "Heater" "coil_damage"
+python -m sensor_simulation.mqtt_publisher "Heater" "coil_damage"
 ```
 
 ---
@@ -222,7 +222,7 @@ python mqtt_publisher.py "Heater" "coil_damage"
 To test pipeline throughput with multiple simulated devices:
 
 ```bash
-python test_multi_sockets.py
+python -m sensor_simulation.test_multi_sockets
 ```
 
 This launches **5 independent smart plug simulators simultaneously**, allowing validation of:
