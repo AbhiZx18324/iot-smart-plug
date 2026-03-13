@@ -1,8 +1,6 @@
-# mqtt_publisher.py
-
 import json
 import time
-
+import sys
 import paho.mqtt.client as mqtt
 
 from .signal_generator import SmartPlugSimulator
@@ -10,20 +8,19 @@ from .usage_scheduler import UsageScheduler
 
 BROKER_ADDRESS = "127.0.0.1"
 BROKER_PORT = 1884
-PUBLISH_INTERVAL = 0.1  # seconds
-
+PUBLISH_INTERVAL = 0.1 
 
 class SmartPlugMQTTPublisher:
-    def __init__(self, plug_id, appliance_name):
+    def __init__(self, plug_id, appliance_name, fault_mode=None):
         self.plug_id = plug_id
         self.topic = f"smartplug/{plug_id}/telemetry"
 
         self.simulator = SmartPlugSimulator(
             appliance_name=appliance_name,
-            plug_id=plug_id
+            plug_id=plug_id,
+            fault_mode=fault_mode
         )
         self.scheduler = UsageScheduler(appliance_name)
-
         self.client = mqtt.Client(client_id=plug_id)
 
     def connect(self):
@@ -31,28 +28,13 @@ class SmartPlugMQTTPublisher:
         self.client.loop_start()
 
     def publish_once(self):
-        sample = self.simulator.sample()
-
-        message = {
-            "plug_id": sample["plug_id"],
-            "timestamp": sample["timestamp"],
-
-            "electrical": {
-                "voltage_rms": sample["voltage_rms"],
-                "current_rms": sample["current_rms"],
-                "power_active": sample["power_active"],
-                "frequency": sample["frequency"]
-            },
-
-            "state": {
-                "relay": sample["relay"],
-                "appliance_truth": sample["appliance_truth"]
-            }
-        }
-
-        payload = json.dumps(message)
+        payload_dict = self.simulator.sample()
+        payload = json.dumps(payload_dict)
         self.client.publish(self.topic, payload)
-        print(f"[PUBLISHED] {payload}")
+        
+        # Refined log output
+        fault_str = f" [FAULT: {self.simulator.device.fault_mode}]" if self.simulator.device.fault_mode else ""
+        print(f"[PUBLISHED] {payload_dict['plug_id']} | {payload_dict['electrical']['power_active']}W{fault_str}")
         
     def start(self):
         print(f"[INFO] Starting smart plug: {self.plug_id}")
@@ -61,29 +43,26 @@ class SmartPlugMQTTPublisher:
         try:
             while True:
                 self.scheduler.update(self.simulator)
-
                 self.publish_once()
                 time.sleep(PUBLISH_INTERVAL)
 
         except KeyboardInterrupt:
-            print("\n[INFO] Shutting down smart plug...")
+            print("\n[INFO] Shutting down...")
             self.simulator.turn_off()
-
-            # Publish explicit OFF state
             self.publish_once()
             time.sleep(0.2)
-            
             self.client.loop_stop()
             self.client.disconnect()
 
-import sys
 if __name__ == "__main__":
-
+    # Usage: python mqtt_publisher.py "ApplianceName" "OptionalFaultMode"
     appliance = sys.argv[1] if len(sys.argv) > 1 else "Fan"
+    fault = sys.argv[2] if len(sys.argv) > 2 else None
 
     publisher = SmartPlugMQTTPublisher(
         plug_id="plug_001_sim",
-        appliance_name=appliance
+        appliance_name=appliance,
+        fault_mode=fault
     )
 
     publisher.connect()

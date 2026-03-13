@@ -17,13 +17,13 @@ def main():
     # Instantiate one device for each behavior archetype
     devices = [
         SmartPlugSimulator("Fan", plug_id="plug_01_motor", 
-                           fault_mode="bearing_wear",
+                        #    fault_mode="bearing_wear",
                            ),
         SmartPlugSimulator("Incandescent Light Bulb", plug_id="plug_02_light",
                            fault_mode="flicker",
                            ),
         SmartPlugSimulator("Heater", plug_id="plug_03_thermal",
-                           fault_mode="coil_damage",
+                        #    fault_mode="coil_damage",
                            ),
         SmartPlugSimulator("Fridge", plug_id="plug_04_hvac",
                            fault_mode="compressor_degradation",
@@ -60,23 +60,7 @@ def main():
 
             for dev in devices:
                 # Get raw sample from behavior models
-                raw_sample = dev.sample()
-                
-                # Format exactly as ml_service.py expects
-                telemetry = {
-                    "plug_id": raw_sample["plug_id"],
-                    "timestamp": now_iso,
-                    "electrical": {
-                        "voltage_rms": raw_sample["voltage_rms"],
-                        "current_rms": raw_sample["current_rms"],
-                        "power_active": raw_sample["power_active"],
-                        "frequency": raw_sample["frequency"]
-                    },
-                    "state": {
-                        "relay": raw_sample["relay"],
-                        "appliance_truth": raw_sample["appliance_truth"]
-                    }
-                }
+                telemetry = dev.sample()
                 
                 topic = PUBLISH_TOPIC_TEMPLATE.format(dev.plug_id)
                 client.publish(topic, json.dumps(telemetry))
@@ -84,7 +68,7 @@ def main():
                 # Print a throttled console output so it doesn't flood your screen
                 # (Only print every ~1 second per device to keep the console readable)
                 if int(loop_start * 10) % 10 == 0:
-                    print(f"{now_iso[11:23]:<25} | {dev.plug_id:<15} | {dev.appliance_name[:12]:<12} | {raw_sample['power_active']:>7.2f} W")
+                    print(f"{now_iso[11:23]:<25} | {dev.plug_id:<15} | {dev.appliance_name[:12]:<12} | {telemetry['electrical']['power_active']:>7.2f} W")
 
             # Enforce strict 10Hz tick rate
             elapsed = time.time() - loop_start
@@ -93,31 +77,12 @@ def main():
                 time.sleep(sleep_time)
 
     except KeyboardInterrupt:
-        print("\n[TEST] Stopping simulators...")
-        
+        print("\n[TEST] Shutting down...")
         for dev in devices:
             dev.turn_off()
-            print(f"[TEST] Turned OFF: {dev.appliance_name} ({dev.plug_id})")
-            raw_sample = dev.sample()  
-            now_iso = datetime.datetime.now(datetime.timezone.utc).isoformat()
-            
-            telemetry = {
-                "plug_id": raw_sample["plug_id"],
-                "timestamp": now_iso,
-                "electrical": {
-                    "voltage_rms": raw_sample["voltage_rms"],
-                    "current_rms": raw_sample["current_rms"],
-                    "power_active": raw_sample["power_active"],
-                    "frequency": raw_sample["frequency"]
-                },
-                "state": {
-                    "relay": raw_sample["relay"],
-                    "appliance_truth": raw_sample["appliance_truth"]
-                }
-            }
-            
-            topic = PUBLISH_TOPIC_TEMPLATE.format(dev.plug_id)
-            client.publish(topic, json.dumps(telemetry))
+            # Publish final OFF state before exiting
+            client.publish(PUBLISH_TOPIC_TEMPLATE.format(dev.plug_id), json.dumps(dev.sample()))
+
     finally:
         client.loop_stop()
         client.disconnect()

@@ -1,63 +1,247 @@
 # Smart Plug Sensor Simulation Engine
 
-This module is the data-generation backbone for our IoT analytics pipeline. It simulates 10 Hz high-resolution electrical telemetry (Voltage, Current, Active Power) for various household appliances and publishes the data streams to a local MQTT broker.
+This module acts as the **digital twin of a smart plug** in our IoT analytics pipeline. It generates realistic electrical telemetry streams (Voltage, Current, Active Power) at **10 Hz resolution** for various household appliances and publishes them to a local MQTT broker.
 
-The simulated payloads are specifically designed to be ingested by our downstream Machine Learning service (Random Forest feature extractor), which classifies the active appliance based on its electrical signature.
+The simulated signals mimic the output of real low-cost smart plugs and are specifically designed to be consumed by the downstream **Machine Learning inference service**, which extracts statistical features and classifies the electrical load behavior.
 
-## Directory Structure & File Overview
+The simulator also supports **controlled fault injection**, enabling realistic anomaly scenarios for testing the anomaly detection pipeline.
 
-* **`behavior_models.py`**: The core statistical simulation logic. Contains the "Archetype" models that define the specific startup transients, steady-state power, and high-frequency noise profiles of different appliance categories.
-* **`signal_generator.py`**: Maps specific household items (e.g., "Fan", "Fridge") to their base behavior models. Calculates the instantaneous Voltage (simulating grid fluctuations) and Current based on the active power draw.
-* **`usage_profiles.py`**: Defines the realistic human-interaction parameters (mean ON time, mean OFF time) for each appliance type.
-* **`usage_scheduler.py`**: Uses an exponential distribution to simulate realistic, random human interaction with the smart plugs over long periods.
-* **`mqtt_publisher.py`**: A standalone script to simulate a single smart plug and continuously stream its telemetry to `localhost:1884`.
-* **`test_multi_sockets.py`**: A concurrent stress-test script that spawns 5 separate virtual smart plugs simultaneously to test the pipeline's parallel processing capabilities.
+---
 
-## Architectural Decision: The "Real Life vs. Reel Life" Gap
+# Directory Structure & File Overview
 
-One of the major engineering challenges in this project was bridging the gap between our simulated data ("Reel Life") and the Machine Learning model trained on the PLAID dataset ("Real Life").
+* **`behavior_models.py`**
+  Contains the statistical **appliance archetypes** that generate realistic electrical power signatures for different appliance categories.
 
-**The Problem:**
-The PLAID dataset contains recordings of physical appliances with real hardware quirks (e.g., motor brush friction, degrading compressors, grid harmonics). When we initially tried to simulate appliances using wide Gaussian distributions based on the overall dataset variance, our Random Forest classifier completely failed. For example, applying heavy random noise to a washing machine simulation caused our feature extractor's `oscillations` and `max_delta` metrics to spike, causing the model to misclassify it as a chaotic Thermal load.
+* **`signal_generator.py`**
+  Maps real-world appliances (e.g., *Fan*, *Fridge*) to their corresponding archetype models and generates instantaneous electrical telemetry.
 
-**Our Solution (Appliance Archetypes):**
-Instead of allowing the simulator to randomly drift, we reverse-engineered the Random Forest's decision boundaries. We locked our simulated appliances into **Statistical Archetypes**—forcing the simulated signals to sit dead-center in the model's learned feature clusters.
+* **`usage_profiles.py`**
+  Defines realistic human usage behavior such as average ON/OFF durations.
 
-* **`ArchetypeLighting` (e.g., Bulbs):** Locked to 35W with near-zero noise. Prevents false `oscillations` that confuse it with small motors.
-* **`ArchetypeSmallMotor` (e.g., Fans, Laptops):** Locked to 85W with a smooth, 4W mechanical sine-wave ripple. This safely keeps it out of the HVAC decision zone (>117W).
-* **`ArchetypeHVAC` (e.g., Fridges, ACs):** Centered at 160W with moderate inrush spikes, avoiding the massive variance of 240V central air units that the model wasn't trained on.
-* **`ArchetypeLaundry` (e.g., Washing Machines):** Locked to 528W with precisely 45W of high-frequency noise, perfectly mimicking the PLAID dataset's snapshot of a spinning drum without inducing macro-cycle range collapse.
-* **`ArchetypeThermal` (e.g., Heaters):** Locked to 1200W with highly stable power (2W noise), fulfilling the model's expectation of a pure resistive heating element.
+* **`usage_scheduler.py`**
+  Uses exponential distributions to simulate stochastic human interaction with appliances.
 
-## How to Run
+* **`mqtt_publisher.py`**
+  Standalone simulator that spins up a virtual smart plug and streams telemetry to the MQTT broker.
 
-### 1. Prerequisite
+* **`test_multi_sockets.py`**
+  Stress-test script that launches multiple simulated smart plugs simultaneously to test the pipeline’s concurrency handling.
 
-Ensure your MQTT broker (e.g., Mosquitto) is running on `localhost:1884`.
+---
 
-### 2. Single Appliance Simulation
+# Architectural Decision: The "Real Life vs. Reel Life" Gap
 
-To spin up a single plug simulating human usage of a specific appliance:
+One of the primary engineering challenges was bridging the gap between **simulated signals ("Reel Life")** and the **PLAID dataset recordings ("Real Life")** used to train the ML classifier.
+
+## The Problem
+
+The PLAID dataset contains recordings of real appliances operating in uncontrolled environments. These recordings contain hardware imperfections such as:
+
+* motor brush friction
+* compressor degradation
+* electrical harmonics
+* voltage instability
+
+When we initially simulated appliances using wide Gaussian distributions derived from dataset variance, our Random Forest classifier failed catastrophically.
+
+For example:
+
+* Adding high noise to washing machine simulations caused the `oscillations` and `max_delta` features to spike.
+* The model consequently misclassified the appliance as a **Thermal load**.
+
+This demonstrated that **statistical similarity alone was insufficient** to reproduce the feature clusters learned by the classifier.
+
+---
+
+# Our Solution: Appliance Archetypes
+
+Instead of allowing the simulator to randomly drift through the statistical distribution, we reverse engineered the **Random Forest decision boundaries** and constructed **statistical archetypes**.
+
+Each archetype represents the **center of the feature cluster** learned by the classifier.
+
+This guarantees that simulated signals remain within the classifier's expected behavioral envelope.
+
+## Archetype Definitions
+
+### ArchetypeLighting (Bulbs)
+
+* Mean Power: **35 W**
+* Noise: **near zero**
+
+This prevents artificial oscillations that would otherwise resemble small motors.
+
+---
+
+### ArchetypeSmallMotor (Fans)
+
+* Mean Power: **85 W**
+* Ripple: **±4 W sinusoidal mechanical oscillation**
+
+This ripple simulates mechanical vibration and ensures the signal remains distinguishable from static resistive loads.
+
+---
+
+### ArchetypeHVAC (Fridge / AC)
+
+* Mean Power: **160 W**
+* Noise: **1.5 W**
+
+This avoids the extremely large variance seen in industrial HVAC units that were not represented in the training dataset.
+
+---
+
+### ArchetypeLaundry (Washing Machine)
+
+* Mean Power: **528 W**
+* Noise: **45 W**
+
+This matches the PLAID dataset snapshot of a spinning drum without causing macro power range collapse.
+
+---
+
+### ArchetypeThermal (Heaters)
+
+* Mean Power: **1200 W**
+* Noise: **2 W**
+
+This simulates the extremely stable behavior of resistive heating elements.
+
+---
+
+# Fault & Anomaly Simulation
+
+To evaluate the anomaly detection module, the simulator supports **controlled fault injection**.
+
+Instead of changing the appliance class entirely, faults introduce **statistical deviations within the same behavioral category**, allowing the anomaly detection system to identify abnormal behavior while the classifier still recognizes the appliance type.
+
+## Why Fault Injection Matters
+
+Real appliances rarely fail abruptly. Instead they degrade gradually due to:
+
+* mechanical wear
+* electrical faults
+* thermal damage
+* environmental fluctuations
+
+These failures manifest as **changes in signal statistics**, not necessarily as changes in appliance type.
+
+By injecting these deviations into the simulation, we can test whether the anomaly detection system correctly detects abnormal behavior.
+
+---
+
+# Supported Fault Modes
+
+| Appliance Class         | Fault Mode               | Effect                                    |
+| ----------------------- | ------------------------ | ----------------------------------------- |
+| SMALL_MOTOR_ELECTRONICS | `bearing_wear`           | Increased ripple amplitude and power draw |
+| LIGHTING_LOADS          | `flicker`                | Sinusoidal intensity fluctuations         |
+| THERMAL_APPLIANCES      | `coil_damage`            | Reduced power with increased noise        |
+| HVAC_REFRIGERATION      | `compressor_degradation` | Lower steady-state power                  |
+| LAUNDRY_APPLIANCES      | `drum_imbalance`         | Increased vibration noise                 |
+
+These faults distort the electrical signature while keeping the appliance within its behavioral class.
+
+---
+
+# Running the Simulator
+
+## Prerequisite
+
+Ensure an MQTT broker (e.g., **Mosquitto**) is running on:
+
+```
+localhost:1884
+```
+
+---
+
+# Single Appliance Simulation
+
+To simulate a single appliance:
 
 ```bash
 python mqtt_publisher.py "Fan"
-
 ```
 
-*Supported appliances: "Fan", "Laptop", "Incandescent Light Bulb", "Heater", "Microwave", "Hairdryer", "Fridge", "Air Conditioner", "Washing Machine", "Compact Fluorescent Lamp".*
+Supported appliances:
 
-### 3. Concurrent Pipeline Test
+* Fan
+* Laptop
+* Incandescent Light Bulb
+* Heater
+* Microwave
+* Hairdryer
+* Fridge
+* Air Conditioner
+* Washing Machine
+* Compact Fluorescent Lamp
 
-To test the downstream ML service's ability to handle multiple isolated data streams simultaneously, run the multi-socket stress test. This turns on 5 distinct appliances at once:
+---
+
+# Running With Fault Injection
+
+Fault modes can be provided as an optional argument.
+
+## Syntax
+
+```bash
+python mqtt_publisher.py "ApplianceName" "FaultMode"
+```
+
+## Examples
+
+Normal fan behavior
+
+```bash
+python mqtt_publisher.py "Fan"
+```
+
+Fan with bearing wear
+
+```bash
+python mqtt_publisher.py "Fan" "bearing_wear"
+```
+
+Lighting flicker
+
+```bash
+python mqtt_publisher.py "Incandescent Light Bulb" "flicker"
+```
+
+Heating coil degradation
+
+```bash
+python mqtt_publisher.py "Heater" "coil_damage"
+```
+
+---
+
+# Concurrent Pipeline Test
+
+To test pipeline throughput with multiple simulated devices:
 
 ```bash
 python test_multi_sockets.py
-
 ```
 
-## 📡 Payload Format
+This launches **5 independent smart plug simulators simultaneously**, allowing validation of:
 
-The simulator publishes data at 10 Hz to `smartplug/{plug_id}/telemetry` in the following JSON format:
+* MQTT throughput
+* ML service concurrency
+* pipeline stability
+
+---
+
+# Telemetry Payload Format
+
+The simulator publishes data to:
+
+```
+smartplug/{plug_id}/telemetry
+```
+
+Example payload:
 
 ```json
 {
@@ -74,5 +258,32 @@ The simulator publishes data at 10 Hz to `smartplug/{plug_id}/telemetry` in the 
     "appliance_truth": "Fan"
   }
 }
-
 ```
+
+---
+
+# Future Scope
+
+Currently, faults are specified **at simulator startup via CLI arguments**.
+
+Future extensions may include **real-time anomaly injection**, allowing faults to be triggered dynamically through:
+
+* MQTT control messages
+* dashboard interactions
+* scheduled fault events
+
+This would enable live demonstrations of appliance degradation within the IoT monitoring pipeline.
+
+---
+
+# Summary
+
+This module provides a **controlled, statistically grounded simulation environment** for:
+
+* generating realistic smart plug telemetry
+* validating the ML classification pipeline
+* testing anomaly detection algorithms
+* demonstrating fault scenarios in IoT systems
+
+It serves as the **foundation of the digital twin layer** in our smart plug analytics architecture.
+

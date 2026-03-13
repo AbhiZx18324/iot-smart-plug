@@ -1,33 +1,24 @@
 import time
 import numpy as np
-
-from .behavior_models import (
-    ArchetypeLighting,
-    ArchetypeSmallMotor,
-    ArchetypeThermal,
-    ArchetypeHVAC,
-    ArchetypeLaundry
-)
 from datetime import datetime, timezone
+from .behavior_models import (
+    ArchetypeLighting, ArchetypeSmallMotor, ArchetypeThermal, 
+    ArchetypeHVAC, ArchetypeLaundry
+)
 
 APPLIANCE_CLASS_MAP = {
     "Fan": ArchetypeSmallMotor,
     "Vacuum": ArchetypeSmallMotor,
     "Laptop": ArchetypeSmallMotor,
-
     "Incandescent Light Bulb": ArchetypeLighting,
     "Compact Fluorescent Lamp": ArchetypeLighting,
-
     "Heater": ArchetypeThermal,
     "Microwave": ArchetypeThermal,
     "Hairdryer": ArchetypeThermal,
-
     "Fridge": ArchetypeHVAC,
     "Air Conditioner": ArchetypeHVAC,
-
     "Washing Machine": ArchetypeLaundry
 }
-
 
 class SmartPlugSimulator:
     def __init__(self, appliance_name, plug_id="plug_001", fault_mode=None):
@@ -35,10 +26,8 @@ class SmartPlugSimulator:
         self.plug_id = plug_id
         self.state = "OFF"
         self.start_time = None
-
         self.nominal_voltage = 230.0
 
-        # instantiate behavior model
         model_class = APPLIANCE_CLASS_MAP[appliance_name]
         self.device = model_class(fault_mode=fault_mode)
 
@@ -53,11 +42,11 @@ class SmartPlugSimulator:
         return self.nominal_voltage + np.random.normal(0, 1.0)
 
     def sample(self):
+        """Generates a single data point and returns structured telemetry."""
         voltage = self._simulate_voltage()
-
-        if self.state == "OFF":
-            power = 0.0
-        else:
+        power = 0.0
+        
+        if self.state == "ON":
             t = time.time() - self.start_time
             power = self.device.step(t)
 
@@ -66,10 +55,14 @@ class SmartPlugSimulator:
         return {
             "plug_id": self.plug_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
-            "voltage_rms": round(voltage, 2),
-            "current_rms": round(current, 3),
-            "power_active": round(power, 2),
-            "frequency": 50.0,
-            "relay": "ON" if self.state == "ON" else "OFF",
-            "appliance_truth": self.appliance_name
+            "electrical": {
+                "voltage_rms": round(voltage, 2),
+                "current_rms": round(current, 3),
+                "power_active": round(power, 2),
+                "frequency": 50.0
+            },
+            "state": {
+                "relay": self.state,
+                "appliance_truth": self.appliance_name
+            }
         }
