@@ -80,7 +80,8 @@ ML consumes processed windows rather than raw telemetry to identify patterns and
     "mean_power": 82.1,
     "std_power": 3.2,
     "max_power": 90.4,
-    "turn_on_spike": 120.6
+    "turn_on_spike": 120.6,
+    ...
   }
 }
 
