@@ -83,10 +83,6 @@ def compute_load_class(plug_id, feature_vector):
         for lc in belief_state[plug_id]:
             belief_state[plug_id][lc] *= DECAY
 
-    # print("[ML] instant_scores: ", instant_scores)
-    # print("[ML] belief_count: ", belief_count)
-    # print("[ML] belief_state: ", belief_state)
-
     # normalize belief
     total = sum(belief_state[plug_id].values())
     best = max(belief_state[plug_id], key=belief_state[plug_id].get)
@@ -104,7 +100,7 @@ def on_connect(client, userdata, flags, rc):
     client.subscribe(TELEMETRY_TOPIC)
 
 
-def publish_prediction(client, plug_id, timestamp, load_class, confidence, stability):
+def publish_prediction(client, plug_id, timestamp, load_class, confidence, stability, is_anomaly=False, anomaly_score=0.0):
     topic = INFERENCE_TOPIC_TEMPLATE.format(plug_id)
 
     message = {
@@ -113,63 +109,61 @@ def publish_prediction(client, plug_id, timestamp, load_class, confidence, stabi
         "load_class": load_class,
         "confidence": float(confidence),
         "stability": float(stability),
+        "is_anomaly": bool(is_anomaly),
+        "anomaly_score": float(anomaly_score),
         "model_version": MODEL_VERSION
     }
 
     client.publish(topic, json.dumps(message))
-    print(f"[ML] {plug_id} → {load_class} (conf={confidence:.2f}, stab={stability:.2f})")
+    
+    # Print a cleaner, unified log to the console
+    anom_str = f" | ANOMALY! (Score: {anomaly_score:.2f})" if is_anomaly else ""
+    print(f"[ML] {plug_id} → {load_class} (conf={confidence:.2f}, stab={stability:.2f}){anom_str}")
 
+def reset_device_context(plug_id):
+    """Clean up tracking when a device is turned off."""
+    processors.pop(plug_id, None)
+    belief_state.pop(plug_id, None)
+    belief_count.pop(plug_id, None)
 
 def on_message(client, userdata, msg):
     try:
         payload = json.loads(msg.payload.decode())
-
         plug_id = payload["plug_id"]
-        timestamp = payload["timestamp"]
         power = payload["electrical"]["power_active"]
         relay_state = payload.get("state", {}).get("relay", "ON")
 
-        if relay_state == "OFF":
-            if plug_id in processors: del processors[plug_id]
-            if plug_id in belief_state: del belief_state[plug_id]
-            if plug_id in belief_count: del belief_count[plug_id]
-            
-            publish_prediction(client, plug_id, timestamp, "OFF", 1.0, 1.0)
-            return
-        
-        # ignore OFF state / near zero power
-        if power < 2:
+        if relay_state == "OFF" or power < 2:
+            reset_device_context(plug_id)
+            if relay_state == "OFF":
+                publish_prediction(client, plug_id, payload["timestamp"], "OFF", 1.0, 1.0)
             return
 
         processor = processors[plug_id]
-        features = processor.add_sample(timestamp, power)
+        features_dict = processor.add_sample(payload["timestamp"], power)
 
-        if features is None:
-            return
+        if features_dict:
+            # Consistent vectorization
+            vector = processor.get_feature_vector(features_dict)
+            
+            load_class, conf, stab = compute_load_class(plug_id, [vector])
 
-        feature_vector = [list(features.values())]
-        print("[ML FEATURES]", feature_vector)
-        load_class, confidence, stability = compute_load_class(plug_id, feature_vector)
-        print(f"[RAW PRED] load: {load_class}\tconf: {confidence}\tstab: {stability}")
+            is_anom, score = False, 0.0
+            if conf > 0.5 and stab > 0.8:
+                is_anom, score = detector.is_anomaly(vector, load_class)
 
-        if confidence > 0.5 and stability > 0.8:
-            is_anom, score = detector.is_anomaly(feature_vector[0], load_class)
-            print("[ANOMALY SCORE] ", score)
-            if is_anom:
-                print(f"[ANOMALY] {plug_id} → {load_class} score={score:.2f}")
-
-        publish_prediction(client, plug_id, timestamp, load_class, confidence, stability)
+            publish_prediction(client, plug_id, payload["timestamp"], load_class, conf, stab, is_anom, score)
 
     except Exception as e:
-        print("[ML ERROR]", e)
+        print(f"[ML ERROR] {e}")
 
 
 # ---------- START SERVICE ---------- #
 
-client = mqtt.Client()
-client.on_connect = on_connect
-client.on_message = on_message
+if __name__ == "__main__":
+    client = mqtt.Client()
+    client.on_connect = on_connect
+    client.on_message = on_message
 
-client.connect(BROKER, PORT, 60)
-client.loop_forever()
-
+    client.connect(BROKER, PORT, 60)
+    client.loop_forever()

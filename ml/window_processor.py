@@ -1,77 +1,51 @@
-# window_processor.py
-
-from collections import deque
 import numpy as np
-
+from collections import deque
 
 class SlidingWindowProcessor:
+    FEATURE_KEYS = [
+        "mean_power", "max_power", "min_power", "std_power", 
+        "range_power", "coef_var", "max_delta", "mean_delta", 
+        "spike_count", "slope", "oscillations"
+    ]
+
     def __init__(self, window_size=20, step_size=5):
         self.window_size = window_size
         self.step_size = step_size
         self.buffer = deque()
 
     def add_sample(self, timestamp, power):
-        """
-        Add a new sample to the buffer.
-        Returns a feature dict when a window is ready, else None.
-        """
         self.buffer.append((timestamp, power))
-
         if len(self.buffer) < self.window_size:
             return None
 
-        features = self._compute_features()
-
-        # Slide window
+        features_dict = self._compute_features()
+        
+        # Prepare the sliding window for next batch
         for _ in range(self.step_size):
-            if self.buffer:
-                self.buffer.popleft()
+            if self.buffer: self.buffer.popleft()
 
-        return features
+        return features_dict
+
+    def get_feature_vector(self, features_dict):
+        """Helper to ensure the list/vector matches the expected ML input order."""
+        return [features_dict[k] for k in self.FEATURE_KEYS]
 
     def _compute_features(self):
         powers = np.array([p for _, p in self.buffer])
-
-        mean_power = np.mean(powers)
-        max_power = np.max(powers)
-        min_power = np.min(powers)
-        std_power = np.std(powers)
-
-        range_power = max_power - min_power
-        coef_var = std_power / mean_power if mean_power > 0 else 0
-
+        mean_p = np.mean(powers)
+        std_p = np.std(powers)
         deltas = np.diff(powers)
-        max_delta = np.max(np.abs(deltas)) if len(deltas) > 0 else 0
-        mean_delta = np.mean(np.abs(deltas)) if len(deltas) > 0 else 0
-        spike_count = np.sum(np.abs(deltas) > 0.15 * mean_power)
-
-        slope = self._compute_slope(powers)
-        oscillations = self._zero_crossings(deltas)
 
         return {
-            "mean_power": mean_power,
-            "max_power": max_power,
-            "min_power": min_power,
-            "std_power": std_power,
-            "range_power": range_power,
-            "coef_var": coef_var,
-            "max_delta": max_delta,
-            "mean_delta": mean_delta,
-            "spike_count": spike_count,
-            "slope": slope,
-            "oscillations": oscillations
+            "mean_power": mean_p,
+            "max_power": np.max(powers),
+            "min_power": np.min(powers),
+            "std_power": std_p,
+            "range_power": np.max(powers) - np.min(powers),
+            "coef_var": std_p / mean_p if mean_p > 0 else 0,
+            "max_delta": np.max(np.abs(deltas)) if len(deltas) > 0 else 0,
+            "mean_delta": np.mean(np.abs(deltas)) if len(deltas) > 0 else 0,
+            "spike_count": np.sum(np.abs(deltas) > 0.15 * mean_p),
+            "slope": np.polyfit(np.arange(len(powers)), powers, 1)[0] if len(powers) > 1 else 0,
+            "oscillations": np.sum(np.diff(np.sign(deltas)) != 0) if len(deltas) > 1 else 0
         }
-
-    def _compute_slope(self, powers):
-        x = np.arange(len(powers))
-        if len(powers) < 2:
-            return 0
-        slope = np.polyfit(x, powers, 1)[0]
-        return slope
-
-    def _zero_crossings(self, deltas):
-        if len(deltas) < 2:
-            return 0
-        return np.sum(np.diff(np.sign(deltas)) != 0)
-
-
