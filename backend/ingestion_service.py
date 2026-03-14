@@ -30,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 # --- Configuration ---
 BROKER_ADDRESS = "127.0.0.1"
-BROKER_PORT = 1883
+BROKER_PORT = 1884
 TOPIC = "smartplug/+/telemetry"
 INFLUX_URL = "http://localhost:8086"
 INFLUX_ORG = "smartplug_org"

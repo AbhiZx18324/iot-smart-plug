@@ -4,7 +4,7 @@ import json
 import paho.mqtt.client as mqtt
 
 BROKER_ADDRESS = "localhost"
-BROKER_PORT = 1883
+BROKER_PORT = 1884
 TOPIC = "smartplug/+/telemetry"
 
 

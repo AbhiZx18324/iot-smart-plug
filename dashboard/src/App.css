@@ -1,11 +1,11 @@
 #root {
-  width: 100vw;
+  width: 100%;
   margin: 0;
   padding: 0;
   display: flex;
   justify-content: center; /* This centers horizontally */
   align-items: center;     /* This centers vertically */
-  min-height: 100vh;
+  min-height: 100%;
   background-color: #000;  /* Matches your dashboard theme */
 }
 
