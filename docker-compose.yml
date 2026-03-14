@@ -16,8 +16,7 @@ services:
       - smartplug_net
 
   ml_service:
-    build: 
-      context: ./ml
+    image: abhizx18324/ml-service:v1
     container_name: ml_service
     environment:
       - MQTT_BROKER=mqtt_broker
