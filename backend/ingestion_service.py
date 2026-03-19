@@ -31,7 +31,9 @@ logger = logging.getLogger(__name__)
 # --- Configuration ---
 BROKER_ADDRESS = "127.0.0.1"
 BROKER_PORT = 1884
-TOPIC = "smartplug/+/telemetry"
+TELEMETRY_TOPIC = "smartplug/+/telemetry"
+INFERENCE_TOPIC = "smartplug/+/inference"
+
 INFLUX_URL = "http://localhost:8086"
 INFLUX_ORG = "smartplug_org"
 INFLUX_BUCKET = "smartplug_data"
@@ -40,7 +42,7 @@ INFLUX_BUCKET = "smartplug_data"
 influx_client = InfluxDBClient(url=INFLUX_URL, token=INFLUX_TOKEN, org=INFLUX_ORG)
 write_api = influx_client.write_api(write_options=SYNCHRONOUS)
 
-def validate_payload(data):
+def validate_telemetry(data):
     """Enforces strict physical bounds and schema requirements."""
     try:
         plug_id = data["plug_id"]
@@ -73,13 +75,34 @@ def validate_payload(data):
     except TypeError:
         logger.warning("Invalid data types in payload. Dropping.")
         return False
-
-def insert_data(data):
-    """Parses JSON and writes to InfluxDB."""
+    
+def validate_inference(data):
+    """Enforces schema bounds for ML predictions based on inference_schema.md"""
     try:
         plug_id = data["plug_id"]
-        ts_str = data["timestamp"].replace("Z", "+00:00")
-        dt = datetime.fromisoformat(ts_str)
+        conf = float(data["confidence"])
+        stab = float(data["stability"])
+
+        if not (0.0 <= conf <= 1.0):
+            logger.warning(f"Invalid confidence ({conf}) from {plug_id}. Dropping.")
+            return False
+        if not (0.0 <= stab <= 1.0):
+            logger.warning(f"Invalid stability ({stab}) from {plug_id}. Dropping.")
+            return False
+        return True
+    except KeyError as e:
+        logger.warning(f"Missing inference field {e}. Dropping.")
+        return False
+    except ValueError:
+        logger.warning("Invalid data types in inference payload. Dropping.")
+        return False
+
+# --- InfluxDB Ingestion ---
+def insert_telemetry_data(data):
+    """Parses JSON and writes electrical telemetry to InfluxDB."""
+    try:
+        plug_id = data["plug_id"]
+        dt = datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00"))
 
         p_telemetry = Point("telemetry") \
             .tag("plug_id", plug_id) \
@@ -98,38 +121,73 @@ def insert_data(data):
             p_state.field("appliance_truth", data["state"]["appliance_truth"])
 
         write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=[p_telemetry, p_state])
-
     except Exception as e:
-        logger.error(f"Failed to write to InfluxDB: {e}")
+        logger.error(f"Failed to write telemetry to InfluxDB: {e}")
 
+def insert_inference_data(data):
+    """Parses JSON and writes ML predictions to InfluxDB."""
+    try:
+        plug_id = data["plug_id"]
+        dt = datetime.fromisoformat(data["timestamp"].replace("Z", "+00:00"))
+
+        p_inference = Point("inference") \
+            .tag("plug_id", plug_id) \
+            .tag("model_version", data["model_version"]) \
+            .field("load_class", data["load_class"]) \
+            .field("confidence", float(data["confidence"])) \
+            .field("stability", float(data["stability"])) \
+            .field("is_anomaly", bool(data["is_anomaly"])) \
+            .field("anomaly_score", float(data["anomaly_score"])) \
+            .time(dt)
+
+        write_api.write(bucket=INFLUX_BUCKET, org=INFLUX_ORG, record=p_inference)
+    except Exception as e:
+        logger.error(f"Failed to write inference to InfluxDB: {e}")
+
+
+# --- MQTT Callbacks ---
 def on_connect(client, userdata, flags, rc):
     if rc == 0:
         logger.info(f"Connected to MQTT broker at {BROKER_ADDRESS}:{BROKER_PORT}")
-        client.subscribe(TOPIC)
-        logger.info(f"Subscribed to topic: {TOPIC}")
+        # Subscribe to both streams
+        client.subscribe(TELEMETRY_TOPIC)
+        client.subscribe(INFERENCE_TOPIC)
+        logger.info(f"Subscribed to topics: {TELEMETRY_TOPIC} & {INFERENCE_TOPIC}")
     else:
         logger.error(f"MQTT Connection failed with code {rc}")
 
 def on_message(client, userdata, msg):
     try:
+        topic = msg.topic
         payload = msg.payload.decode("utf-8")
         data = json.loads(payload)
 
-        if validate_payload(data):
-            insert_data(data)
-            logger.info(f"DATA OK | {data['timestamp']} | {data['plug_id']} | Saved to DB.")
+        # Route traffic based on the topic
+        if topic.endswith("/telemetry"):
+            if validate_telemetry(data):
+                insert_telemetry_data(data)
+                # Reduced logging to avoid flooding the terminal at 10Hz
+                if float(data["electrical"]["power_active"]) == 0.0:
+                    logger.info(f"TELEMETRY | {data['plug_id']} turned OFF.")
+
+        elif topic.endswith("/inference"):
+            if validate_inference(data):
+                insert_inference_data(data)
+                anom_flag = " [ANOMALY DETECTED]" if data["is_anomaly"] else ""
+                logger.info(f"INFERENCE | {data['plug_id']} -> {data['load_class']} (conf={data['confidence']:.2f}){anom_flag}")
 
     except json.JSONDecodeError:
         logger.warning("Invalid JSON string received. Dropping.")
     except Exception as e:
-        logger.error(f"Unexpected error processing message: {e}")
+        logger.error(f"Unexpected error routing message: {e}")
 
 def main():
-    client = mqtt.Client(client_id="backend_ingestion_service")
+    # Use CallbackAPIVersion.VERSION1 to avoid the paho-mqtt deprecation warning
+    client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION1, client_id="backend_ingestion_service")
     client.on_connect = on_connect
     client.on_message = on_message
 
-    logger.info("Starting Backend Ingestion Service for InfluxDB...")
+    logger.info("Starting Backend Ingestion Service for Dual-Stream InfluxDB...")
     try:
         client.connect(BROKER_ADDRESS, BROKER_PORT)
         client.loop_forever()

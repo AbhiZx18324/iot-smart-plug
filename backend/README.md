@@ -11,11 +11,12 @@ The backend **must not** perform ML inference or feature extraction at this stag
 ### 2. MQTT Subscription Requirements
 
 * Broker: Mosquitto
-* Port: `1883` (development)
+* Port: `1884` (development)
 * Subscription topic:
 
   ```
   smartplug/+/telemetry
+  smartplug/+/inference
   ```
 * Backend must act as an MQTT **client subscriber**
 
@@ -203,30 +204,39 @@ pip install paho-mqtt influxdb-client python-dotenv
 
 #### Step 5: Run the Pipeline
 
-Open two separate terminal windows (ensure your Python virtual environment is active in both).
+Open three separate terminal windows (ensure your Python virtual environment is active in all of them).
 
-**Terminal 1 (Start the Listener):**
+**Terminal 1 (Start the Ingestion Router):**
 
 ```bash
-python backend/ingestion_service.py
+python3 backend/ingestion_service.py
+```
+
+**Terminal 2 (Start the ML Service):**
+
+```bash
+python3 -m ml.ml_service
 ```
 
 **Terminal 2 (Start the Simulator):**
 
 ```bash
-python sensor-simulation/mqtt_publisher.py
+python3 -m sensor-simulation.mqtt_publisher
 ```
 
 #### Step 6: View Live Data
 
 1. Go to `http://localhost:8086` and click the **Data Explorer** icon.
-2. In the Query Builder, select:
-* **FROM:** `smartplug_data`
-* **Filter 1:** `_measurement` -> `telemetry`
-* **Filter 2:** `_field` -> `power_active`
-
-
-3. Click **Submit**.
-4. To stream data live, change the time window to **Past 5m**, click the dropdown arrow next to the Auto-Refresh button, and select **5s**.
+2. To view **Raw Telemetry**:
+   * **FROM:** `smartplug_data`
+   * **Filter 1:** `_measurement` -> `telemetry`
+   * **Filter 2:** `_field` -> `power_active`
+3. To view **ML Predictions & Anomalies**:
+   * Open a new query tab (or overwrite the current one).
+   * **FROM:** `smartplug_data`
+   * **Filter 1:** `_measurement` -> `inference`
+   * **Filter 2:** `_field` -> `anomaly_score` (or `confidence`)
+4. Click **Submit**.
+5. To stream data live, change the time window to **Past 5m**, click the dropdown arrow next to the Auto-Refresh button, and select **5s**.
 
 ---
