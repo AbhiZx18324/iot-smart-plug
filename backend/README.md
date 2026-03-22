@@ -209,7 +209,7 @@ Open three separate terminal windows (ensure your Python virtual environment is 
 **Terminal 1 (Start the Ingestion Router):**
 
 ```bash
-python3 backend/ingestion_service.py
+python3 -m backend.ingestion_service
 ```
 
 **Terminal 2 (Start the ML Service):**
@@ -218,10 +218,10 @@ python3 backend/ingestion_service.py
 python3 -m ml.ml_service
 ```
 
-**Terminal 2 (Start the Simulator):**
+**Terminal 3 (Satrt the backend API server):**
 
 ```bash
-python3 -m sensor-simulation.mqtt_publisher
+python3  -m backend.device_api
 ```
 
 #### Step 6: View Live Data
