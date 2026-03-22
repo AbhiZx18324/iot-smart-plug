@@ -218,7 +218,7 @@ python3 -m backend.ingestion_service
 python3 -m ml.ml_service
 ```
 
-**Terminal 3 (Satrt the backend API server):**
+**Terminal 3 (Start the backend API server):**
 
 ```bash
 python3  -m backend.device_api
