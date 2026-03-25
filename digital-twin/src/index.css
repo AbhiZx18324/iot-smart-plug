@@ -1,0 +1,106 @@
+*, *::before, *::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+:root {
+  --bg-primary: #050810;
+  --bg-secondary: #0a0f1a;
+  --bg-card: linear-gradient(180deg, rgba(16,24,40,0.6) 0%, rgba(9,13,20,0.8) 100%);
+  --border-subtle: rgba(0, 216, 255, 0.12);
+  --border-glow: rgba(0, 216, 255, 0.3);
+  --accent-cyan: #00d8ff;
+  --accent-green: #00e676;
+  --accent-red: #ff3333;
+  --accent-amber: #ffb74d;
+  --accent-pink: #f06292;
+  --accent-purple: #b088f9;
+  --accent-orange: #e96417;
+  --text-primary: #e2e8f0;
+  --text-secondary: #8b9bb4;
+  --text-muted: #64748b;
+  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'Roboto Mono', 'Courier New', monospace;
+  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
+  --glow-shadow: 0 0 30px rgba(0, 216, 255, 0.08);
+}
+
+html, body {
+  height: 100%;
+  width: 100%;
+  overflow: hidden;
+}
+
+body {
+  font-family: var(--font-body);
+  background: var(--bg-primary);
+  background-image: radial-gradient(ellipse at top, rgba(15, 23, 42, 0.5) 0%, rgba(5, 8, 16, 0.95) 70%);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+#root {
+  height: 100%;
+  width: 100%;
+  overflow: auto;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: rgba(0, 216, 255, 0.2);
+  border-radius: 3px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 216, 255, 0.4);
+}
+
+/* Animations */
+@keyframes pulse-glow {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes power-flow {
+  0% { stroke-dashoffset: 20; }
+  100% { stroke-dashoffset: 0; }
+}
+
+@keyframes anomaly-pulse {
+  0%, 100% { box-shadow: 0 0 15px rgba(255, 51, 51, 0.3); }
+  50% { box-shadow: 0 0 35px rgba(255, 51, 51, 0.6); }
+}
+
+@keyframes rotate {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+.fade-in {
+  animation: fade-in 0.3s ease-out;
+}
+
+.slide-up {
+  animation: slide-up 0.4s ease-out;
+}
+
+.anomaly-active {
+  animation: anomaly-pulse 1.2s ease-in-out infinite;
+}
