@@ -1,10 +1,8 @@
 import React, { useState, useCallback, useEffect } from 'react';
 import { io } from 'socket.io-client';
-import DeviceSelector from './components/DeviceSelector';
-import ControlPanel from './components/ControlPanel';
 import LiveReadings from './components/LiveReadings';
 import MLOutput from './components/MLOutput';
-import PlugVisual from './components/PlugVisual';
+import InteractiveSocket from './components/InteractiveSocket';
 import { APPLIANCES } from './constants';
 
 const socket = io('http://localhost:3001');
@@ -33,10 +31,10 @@ export default function App() {
     const handleInference = (payload) => {
       if (isRunning && payload.plug_id === sessionPlugId) {
         setInference({
-          loadClass: payload.predicted_class || 'Unknown',
+          loadClass: payload.load_class || 'Unknown',
           confidence: payload.confidence || 0.0,
-          stability: 1.0, 
-          isAnomaly: payload.anomaly_score > 0.8,
+          stability: payload.stability || 0.0, 
+          isAnomaly: payload.is_anomaly || false,
           anomalyScore: payload.anomaly_score || 0.0
         });
       }
@@ -158,46 +156,26 @@ export default function App() {
         )}
       </div>
 
-      {/* Device Selector */}
-      <DeviceSelector selectedId={selectedId} onSelect={handleSelectDevice} />
-
-      {/* Control Panel */}
-      <div style={{ marginBottom: '24px' }}>
-        <ControlPanel
-          isRunning={isRunning}
-          faultMode={faultMode}
-          onTogglePower={handleTogglePower}
-          onFaultChange={handleFaultChange}
-          selectedAppliance={selectedAppliance}
-        />
+      {/* Hero Visual Digital Twin */}
+      <div style={{ marginBottom: '30px' }}>
+         <InteractiveSocket
+           isRunning={isRunning}
+           power={currentPower}
+           faultMode={faultMode}
+           isAnomaly={inference?.isAnomaly}
+           selectedAppliance={selectedAppliance}
+           onTogglePower={handleTogglePower}
+           onSelectDevice={handleSelectDevice}
+           onFaultChange={handleFaultChange}
+         />
       </div>
 
-      {/* Main Content: Twin Visual + ML | Live Readings */}
+      {/* Analytics Layer: ML Output & Live Readings */}
       <div style={{
-        display: 'grid',
-        gridTemplateColumns: '320px 1fr',
-        gap: '20px',
+        display: 'grid', gridTemplateColumns: 'minmax(350px, 1fr) 2fr', gap: '24px',
       }}>
-        {/* Left column: Visual + ML */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-          <PlugVisual
-            isRunning={isRunning}
-            power={currentPower}
-            faultMode={faultMode}
-            isAnomaly={inference?.isAnomaly}
-          />
-          <MLOutput
-            inference={inference}
-            isRunning={isRunning}
-          />
-        </div>
-
-        {/* Right column: Live Readings */}
-        <LiveReadings
-          latestSample={latestSample}
-          history={history}
-          isRunning={isRunning}
-        />
+        <MLOutput inference={inference} isRunning={isRunning} />
+        <LiveReadings latestSample={latestSample} history={history} isRunning={isRunning} />
       </div>
 
       {/* Footer */}
