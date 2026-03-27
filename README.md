@@ -1,20 +1,21 @@
 # IoT-Based Smart Plug for Appliance Recognition & Power Monitoring
 
 ## Project Overview
-This project implements an IoT-based smart plug system that identifies connected appliances and monitors their power consumption. The system uses electrical signatures derived from voltage and current measurements to classify appliances and analyze energy usage.
+This project features an IoT-based Smart Plug system designed to provide granular insights into household energy consumption. By analyzing electrical signatures (voltage and current waveforms), the system identifies specific appliances in real-time and monitors their power usage.
 
-To simplify deployment and demonstrations, the project uses a **software-defined virtual smart plug** that emulates real electrical sensors while preserving realistic interfaces and data behavior.
+To facilitate rapid prototyping and testing, we utilize a Software-Defined Virtual Smart Plug. This emulator mimics physical sensor output with high fidelity, ensuring the backend and ML logic remain compatible with future hardware deployments.
 
 ---
 
 ## Key Features
-- Virtual smart plug simulating voltage & current sensors
-- Real-time data streaming using MQTT
-- Centralized backend for data ingestion and storage
-- Machine learning-based appliance classification
-- Anomaly detection based on device-specific behavior
-- Web dashboard for live and historical visualization
-- Digital twin for system simulation and monitoring
+- High-Fidelity Simulation: A virtual smart plug that emulates raw voltage and current sensor data, providing realistic telemetry for testing.
+  
+- Real-Time Data Pipeline: Low-latency telemetry streaming using the MQTT protocol for responsive monitoring.
+- ML-Powered Classification: Automated appliance identification using machine learning models trained on unique electrical "fingerprints."
+- Behavioral Anomaly Detection: Intelligent monitoring to flag unusual power spikes or malfunctions based on device-specific historical data.
+- Digital Twin Integration: A virtual 3D representation of the device to monitor system states and simulate "what-if" fault scenarios.
+- Comprehensive Analytics Dashboard: A centralized web interface for real-time visualization, historical trend analysis, and cost estimation.
+
 
 ---
 
@@ -45,20 +46,20 @@ graph TD
 - **Ayanak Misra**
 
 Responsibilities:
-- Virtual sensor simulation
-- MQTT data streaming
-- Backend ingestion & storage
-- Feature extraction
-- Appliance classification
-- Anomaly detection
-
+- Developing virtual sensor simulation
+- Manage MQTT data streaming.
+- Design ETL pipeline for ingestion.
+- Implement time-series storage.
+- Train appliance classification models.
+- Develop anomaly detection logic.
+  
 ### Digital Twin
 - **Pratyush Kumar Chaturvedi**
 
 Responsibilities:
-- Digital twin modeling of the smart plug
-- Simulation & system state monitoring
-- Fault and anomaly injection
+- Model 3D smart plug assets.
+- Integrate real-time state monitoring.
+- Implement fault injection testing.
 
 ### Application Development
 - **Satyam Jha**
