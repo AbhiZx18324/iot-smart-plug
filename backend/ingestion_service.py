@@ -29,12 +29,12 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # --- Configuration ---
-BROKER_ADDRESS = "127.0.0.1"
-BROKER_PORT = 1884
+BROKER_ADDRESS = os.getenv("MQTT_BROKER", "127.0.0.1")
+BROKER_PORT = int(os.getenv("MQTT_PORT", 1884))
 TELEMETRY_TOPIC = "smartplug/+/telemetry"
 INFERENCE_TOPIC = "smartplug/+/inference"
 
-INFLUX_URL = "http://localhost:8086"
+INFLUX_URL = os.getenv("INFLUX_URL", "http://localhost:8086")
 INFLUX_ORG = "smartplug_org"
 INFLUX_BUCKET = "smartplug_data"
 

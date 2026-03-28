@@ -1,8 +1,10 @@
-version: '3.8'
-
 networks:
   smartplug_net:
     name: smartplug_net
+
+volumes:
+  influxdb_data:
+  influxdb_config:
 
 services:
   mqtt_broker:
@@ -15,13 +17,47 @@ services:
     networks:
       - smartplug_net
 
+  influxdb:
+    image: influxdb:2.7.5
+    container_name: influxdb
+    ports:
+      - "8086:8086"
+    volumes:
+      - influxdb_data:/var/lib/influxdb2
+      - influxdb_config:/etc/influxdb2
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=admin
+      - DOCKER_INFLUXDB_INIT_PASSWORD=smartplugadmin # Must be at least 8 chars
+      - DOCKER_INFLUXDB_INIT_ORG=smartplug_org
+      - DOCKER_INFLUXDB_INIT_BUCKET=smartplug_data
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=${INFLUX_TOKEN}
+    networks:
+      - smartplug_net
+
   ml_service:
     image: abhizx18324/ml-service:v1
+    platform: linux/amd64
     container_name: ml_service
     environment:
       - MQTT_BROKER=mqtt_broker
       - MQTT_PORT=1884
     depends_on:
       - mqtt_broker
+    networks:
+      - smartplug_net
+
+  ingestion_service:
+    build: ./backend
+    container_name: ingestion_service
+    env_file:
+      - .env
+    environment:
+      - MQTT_BROKER=mqtt_broker
+      - MQTT_PORT=1884
+      - INFLUX_URL=http://influxdb:8086
+    depends_on:
+      - mqtt_broker
+      - influxdb
     networks:
       - smartplug_net
