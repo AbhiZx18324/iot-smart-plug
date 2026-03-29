@@ -6,16 +6,23 @@ import { spawn } from 'child_process';
 import cors from 'cors';
 import fs from 'fs';
 import path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(cors());
+
+// Serve static frontend files
+app.use(express.static(path.join(__dirname, 'dist')));
 
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-const MQTT_BROKER = 'mqtt://localhost:1884';
+const MQTT_BROKER = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1884';
 let mqttClient = null;
 let pythonProcess = null;
 
@@ -93,7 +100,13 @@ io.on('connection', (socket) => {
   });
 });
 
-const PORT = 3001;
+// The "catchall" handler: for any request that doesn't
+// match one above, send back React's index.html file.
+app.use((req, res) => {
+  res.sendFile(path.join(__dirname, 'dist', 'index.html'));
+});
+
+const PORT = process.env.PORT || 3001;
 server.listen(PORT, () => {
-  console.log(`Backend server running on http://localhost:${PORT}`);
+  console.log(`Backend server running on port ${PORT}`);
 });
