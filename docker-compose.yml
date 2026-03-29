@@ -61,3 +61,27 @@ services:
       - influxdb
     networks:
       - smartplug_net
+
+  dashboard:
+    build: ./dashboard
+    container_name: dashboard
+    ports:
+      - "3000:80"
+    networks:
+      - smartplug_net
+
+  digital_twin:
+    build: 
+      context: .
+      dockerfile: digital-twin/Dockerfile
+    container_name: digital_twin
+    ports:
+      - "3001:3001"
+    environment:
+      - MQTT_BROKER_URL=mqtt://mqtt_broker:1884
+      - MQTT_BROKER=mqtt_broker
+      - MQTT_PORT=1884
+    depends_on:
+      - mqtt_broker
+    networks:
+      - smartplug_net

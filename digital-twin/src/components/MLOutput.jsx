@@ -4,27 +4,26 @@ import { LOAD_CLASS_LABELS } from '../constants';
 function ConfidenceBar({ label, value, color }) {
   const pct = Math.round((value || 0) * 100);
   return (
-    <div style={{ marginBottom: '12px' }}>
+    <div style={{ marginBottom: '14px' }}>
       <div style={{
-        display: 'flex', justifyContent: 'space-between', marginBottom: '4px',
+        display: 'flex', justifyContent: 'space-between', marginBottom: '5px',
       }}>
         <span style={{
-          fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px',
-          color: 'var(--text-muted)',
+          fontSize: '13px', letterSpacing: '0.2px',
+          color: 'var(--text-secondary)', fontWeight: 600,
         }}>{label}</span>
         <span style={{
-          fontSize: '13px', fontFamily: 'var(--font-mono)', fontWeight: 700,
-          color, textShadow: `0 0 10px ${color}50`,
+          fontSize: '14px', fontFamily: 'var(--font-mono)', fontWeight: 700,
+          color,
         }}>{pct}%</span>
       </div>
       <div style={{
-        height: '6px', borderRadius: '3px', background: 'rgba(255,255,255,0.05)',
+        height: '8px', borderRadius: '4px', background: 'rgba(0,0,0,0.06)',
         overflow: 'hidden',
       }}>
         <div style={{
-          height: '100%', width: `${pct}%`, borderRadius: '3px',
-          background: `linear-gradient(90deg, ${color}80, ${color})`,
-          boxShadow: `0 0 10px ${color}40`,
+          height: '100%', width: `${pct}%`, borderRadius: '4px',
+          background: `linear-gradient(90deg, ${color}90, ${color})`,
           transition: 'width 0.3s ease',
         }} />
       </div>
@@ -34,40 +33,46 @@ function ConfidenceBar({ label, value, color }) {
 
 export default function MLOutput({ inference, isRunning }) {
   const hasInference = inference && inference.loadClass;
+  const isAnomaly = inference?.isAnomaly;
+  const isNormal = hasInference && !isAnomaly;
+
+  // Determine CSS class for card animation
+  let cardClass = '';
+  if (isAnomaly) cardClass = 'anomaly-active';
+  else if (isNormal) cardClass = 'normal-active';
 
   return (
     <div style={{
       background: 'var(--bg-card)', padding: '24px', borderRadius: '16px',
-      border: `1px solid ${inference?.isAnomaly ? 'rgba(255,51,51,0.3)' : 'var(--border-subtle)'}`,
-      boxShadow: 'var(--card-shadow)', backdropFilter: 'blur(10px)',
+      border: `1px solid ${isAnomaly ? 'rgba(220,38,38,0.3)' : isNormal ? 'rgba(22,163,74,0.25)' : 'var(--border-subtle)'}`,
+      boxShadow: 'var(--card-shadow)',
       transition: 'border-color 0.3s ease',
     }}
-    className={inference?.isAnomaly ? 'anomaly-active' : ''}
+    className={cardClass}
     >
       <h3 style={{
-        color: 'var(--accent-cyan)', margin: '0 0 20px 0', fontSize: '13px',
-        textTransform: 'uppercase', letterSpacing: '2px',
-        textShadow: '0 0 10px rgba(0,216,255,0.4)',
+        color: 'var(--accent-cyan)', margin: '0 0 20px 0', fontSize: '15px',
+        letterSpacing: '0.2px', fontWeight: 700,
         display: 'flex', alignItems: 'center', gap: '8px',
       }}>
         <span style={{
           width: '8px', height: '8px', borderRadius: '50%',
-          background: hasInference ? 'var(--accent-cyan)' : '#555',
-          boxShadow: hasInference ? '0 0 8px var(--accent-cyan)' : 'none',
+          background: hasInference ? 'var(--accent-cyan)' : '#cbd5e1',
+          boxShadow: hasInference ? '0 0 6px var(--accent-cyan)' : 'none',
         }} />
         ML Inference Engine
       </h3>
 
       {!isRunning ? (
         <div style={{
-          color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '13px',
+          color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '14px',
           padding: '20px 0',
         }}>
           Waiting for simulation to start...
         </div>
       ) : !hasInference ? (
         <div style={{
-          color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '13px',
+          color: 'var(--text-muted)', fontStyle: 'italic', fontSize: '14px',
           padding: '20px 0',
         }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
@@ -80,13 +85,12 @@ export default function MLOutput({ inference, isRunning }) {
           {/* Predicted Class */}
           <div style={{ marginBottom: '20px' }}>
             <div style={{
-              fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1.5px',
-              color: 'var(--text-muted)', marginBottom: '6px',
+              fontSize: '13px', letterSpacing: '0.2px',
+              color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 600,
             }}>Predicted Appliance Class</div>
             <div style={{
               fontSize: '22px', fontWeight: 800, color: 'var(--accent-purple)',
               fontFamily: 'var(--font-mono)',
-              textShadow: '0 0 15px rgba(176,136,249,0.5)',
             }}>
               {LOAD_CLASS_LABELS[inference.loadClass] || inference.loadClass}
             </div>
@@ -100,33 +104,29 @@ export default function MLOutput({ inference, isRunning }) {
           <div style={{
             display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '14px',
             marginTop: '16px', padding: '14px', borderRadius: '10px',
-            background: 'rgba(15, 23, 42, 0.4)',
-            border: '1px solid rgba(255,255,255,0.05)',
+            background: 'rgba(0, 0, 0, 0.02)',
+            border: '1px solid var(--border-subtle)',
           }}>
             <div>
               <div style={{
-                fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px',
-                color: 'var(--text-muted)', marginBottom: '6px',
+                fontSize: '13px', letterSpacing: '0.2px',
+                color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 600,
               }}>Anomaly State</div>
               <div style={{
                 fontSize: '18px', fontWeight: 700, fontFamily: 'var(--font-mono)',
                 color: inference.isAnomaly ? 'var(--accent-red)' : 'var(--accent-green)',
-                textShadow: inference.isAnomaly
-                  ? '0 0 15px rgba(255,51,51,0.5)'
-                  : '0 0 15px rgba(0,230,118,0.5)',
               }}>
                 {inference.isAnomaly ? 'ANOMALY' : 'NORMAL'}
               </div>
             </div>
             <div>
               <div style={{
-                fontSize: '10px', textTransform: 'uppercase', letterSpacing: '1px',
-                color: 'var(--text-muted)', marginBottom: '6px',
+                fontSize: '13px', letterSpacing: '0.2px',
+                color: 'var(--text-secondary)', marginBottom: '6px', fontWeight: 600,
               }}>Anomaly Score</div>
               <div style={{
                 fontSize: '18px', fontWeight: 700, fontFamily: 'var(--font-mono)',
                 color: inference.anomalyScore > 0.8 ? 'var(--accent-orange)' : 'var(--text-secondary)',
-                textShadow: inference.anomalyScore > 0.8 ? '0 0 15px rgba(233,100,23,0.5)' : 'none',
               }}>
                 {inference.anomalyScore?.toFixed(2) ?? '--'}
               </div>
