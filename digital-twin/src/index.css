@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+
 *, *::before, *::after {
   box-sizing: border-box;
   margin: 0;
@@ -5,25 +7,25 @@
 }
 
 :root {
-  --bg-primary: #050810;
-  --bg-secondary: #0a0f1a;
-  --bg-card: linear-gradient(180deg, rgba(16,24,40,0.6) 0%, rgba(9,13,20,0.8) 100%);
-  --border-subtle: rgba(0, 216, 255, 0.12);
-  --border-glow: rgba(0, 216, 255, 0.3);
-  --accent-cyan: #00d8ff;
-  --accent-green: #00e676;
-  --accent-red: #ff3333;
-  --accent-amber: #ffb74d;
-  --accent-pink: #f06292;
-  --accent-purple: #b088f9;
-  --accent-orange: #e96417;
-  --text-primary: #e2e8f0;
-  --text-secondary: #8b9bb4;
-  --text-muted: #64748b;
-  --font-body: 'Inter', 'Segoe UI', system-ui, sans-serif;
-  --font-mono: 'Roboto Mono', 'Courier New', monospace;
-  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3), inset 0 1px 0 0 rgba(255, 255, 255, 0.05);
-  --glow-shadow: 0 0 30px rgba(0, 216, 255, 0.08);
+  --bg-primary: #f4f6fa;
+  --bg-secondary: #ffffff;
+  --bg-card: linear-gradient(180deg, #ffffff 0%, #fafbfd 100%);
+  --border-subtle: rgba(0, 0, 0, 0.1);
+  --border-glow: rgba(59, 130, 246, 0.3);
+  --accent-cyan: #2563eb;
+  --accent-green: #16a34a;
+  --accent-red: #dc2626;
+  --accent-amber: #d97706;
+  --accent-pink: #db2777;
+  --accent-purple: #7c3aed;
+  --accent-orange: #ea580c;
+  --text-primary: #111827;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --font-body: 'Plus Jakarta Sans', 'Inter', 'Segoe UI', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Roboto Mono', 'Courier New', monospace;
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.08), 0 4px 20px rgba(0,0,0,0.05);
+  --glow-shadow: 0 0 20px rgba(37, 99, 235, 0.08);
 }
 
 html, body {
@@ -35,7 +37,6 @@ html, body {
 body {
   font-family: var(--font-body);
   background: var(--bg-primary);
-  background-image: radial-gradient(ellipse at top, rgba(15, 23, 42, 0.5) 0%, rgba(5, 8, 16, 0.95) 70%);
   color: var(--text-primary);
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -55,11 +56,11 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(0, 216, 255, 0.2);
+  background: rgba(0, 0, 0, 0.15);
   border-radius: 3px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 216, 255, 0.4);
+  background: rgba(0, 0, 0, 0.25);
 }
 
 /* Animations */
@@ -84,8 +85,13 @@ body {
 }
 
 @keyframes anomaly-pulse {
-  0%, 100% { box-shadow: 0 0 15px rgba(255, 51, 51, 0.3); }
-  50% { box-shadow: 0 0 35px rgba(255, 51, 51, 0.6); }
+  0%, 100% { box-shadow: 0 0 8px rgba(220, 38, 38, 0.2), 0 1px 3px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 0 24px rgba(220, 38, 38, 0.35), 0 1px 3px rgba(0,0,0,0.08); }
+}
+
+@keyframes normal-pulse {
+  0%, 100% { box-shadow: 0 0 8px rgba(22, 163, 74, 0.15), 0 1px 3px rgba(0,0,0,0.08); }
+  50% { box-shadow: 0 0 20px rgba(22, 163, 74, 0.3), 0 1px 3px rgba(0,0,0,0.08); }
 }
 
 @keyframes rotate {
@@ -103,4 +109,8 @@ body {
 
 .anomaly-active {
   animation: anomaly-pulse 1.2s ease-in-out infinite;
+}
+
+.normal-active {
+  animation: normal-pulse 1.8s ease-in-out infinite;
 }

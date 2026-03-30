@@ -95,4 +95,3 @@ By breaking down electricity consumption by appliance, users can:
 - The virtual smart plug is designed to closely mirror real hardware sensors.
 
 - The system architecture allows seamless replacement with physical sensors in the future.
-

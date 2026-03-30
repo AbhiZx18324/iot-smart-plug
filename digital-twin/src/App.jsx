@@ -33,7 +33,7 @@ export default function App() {
         setInference({
           loadClass: payload.load_class || 'Unknown',
           confidence: payload.confidence || 0.0,
-          stability: payload.stability || 0.0, 
+          stability: payload.stability || 0.0,
           isAnomaly: payload.is_anomaly || false,
           anomalyScore: payload.anomaly_score || 0.0
         });
@@ -84,7 +84,7 @@ export default function App() {
     if (!isRunning) return;
     const actualFault = newFaultVal === 'none' ? null : newFaultVal;
     setFaultMode(actualFault);
-    
+
     // Clear the history immediately so the ML graphs don't lag behind the physical state change
     setHistory([]);
     setLatestSample(null);
@@ -122,21 +122,19 @@ export default function App() {
       }}>
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <div style={{
-            width: '14px', height: '14px', borderRadius: '50%',
+            width: '10px', height: '10px', borderRadius: '50%',
             background: 'var(--accent-cyan)',
-            boxShadow: '0 0 20px var(--accent-cyan)',
-            marginRight: '16px',
+            marginRight: '14px',
           }} />
           <h1 style={{
-            color: '#fff', margin: 0, fontSize: '26px', letterSpacing: '2px',
-            textTransform: 'uppercase', fontWeight: 800,
-            textShadow: '0 0 15px rgba(255,255,255,0.2)',
+            color: 'var(--text-primary)', margin: 0, fontSize: '22px', letterSpacing: '-0.3px',
+            fontWeight: 700,
           }}>
-            Digital Twin
+            IoT Smart Plug Simulator
             <span style={{
               color: 'var(--accent-cyan)', fontSize: '12px', verticalAlign: 'middle',
-              marginLeft: '12px', textShadow: 'none', fontWeight: 600,
-            }}>Smart Plug Simulator</span>
+              marginLeft: '12px', fontWeight: 600,
+            }}>Digital Twin</span>
           </h1>
         </div>
 
@@ -144,8 +142,8 @@ export default function App() {
           <div style={{
             display: 'flex', alignItems: 'center', gap: '10px',
             padding: '6px 16px', borderRadius: '20px',
-            background: 'rgba(0, 216, 255, 0.08)',
-            border: '1px solid rgba(0, 216, 255, 0.2)',
+            background: 'rgba(37, 99, 235, 0.06)',
+            border: '1px solid rgba(37, 99, 235, 0.15)',
           }}>
             <span style={{ fontSize: '18px' }}>{selectedAppliance.icon}</span>
             <span style={{
@@ -158,16 +156,16 @@ export default function App() {
 
       {/* Hero Visual Digital Twin */}
       <div style={{ marginBottom: '30px' }}>
-         <InteractiveSocket
-           isRunning={isRunning}
-           power={currentPower}
-           faultMode={faultMode}
-           isAnomaly={inference?.isAnomaly}
-           selectedAppliance={selectedAppliance}
-           onTogglePower={handleTogglePower}
-           onSelectDevice={handleSelectDevice}
-           onFaultChange={handleFaultChange}
-         />
+        <InteractiveSocket
+          isRunning={isRunning}
+          power={currentPower}
+          faultMode={faultMode}
+          isAnomaly={inference?.isAnomaly}
+          selectedAppliance={selectedAppliance}
+          onTogglePower={handleTogglePower}
+          onSelectDevice={handleSelectDevice}
+          onFaultChange={handleFaultChange}
+        />
       </div>
 
       {/* Analytics Layer: ML Output & Live Readings */}
@@ -181,10 +179,10 @@ export default function App() {
       {/* Footer */}
       <div style={{
         marginTop: '30px', padding: '16px 0', textAlign: 'center',
-        borderTop: '1px solid rgba(255,255,255,0.05)',
-        color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.5px',
+        borderTop: '1px solid var(--border-subtle)',
+        color: 'var(--text-muted)', fontSize: '12px', letterSpacing: '0.3px',
       }}>
-        IoT Smart Plug Digital Twin — Connected to Live Python Simulation Backend
+        Smart Plug Digital Twin — Connected to Live Python Simulation Backend
       </div>
     </div>
   );

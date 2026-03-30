@@ -2,10 +2,10 @@ import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 const METRICS = [
-  { key: 'power_active', label: 'Active Power', unit: 'W', color: '#00d8ff', decimals: 2 },
-  { key: 'voltage_rms', label: 'RMS Voltage', unit: 'V', color: '#ffb74d', decimals: 2 },
-  { key: 'current_rms', label: 'RMS Current', unit: 'A', color: '#f06292', decimals: 3 },
-  { key: 'frequency', label: 'Frequency', unit: 'Hz', color: '#00e676', decimals: 1 },
+  { key: 'power_active', label: 'Active Power', unit: 'W', color: '#2563eb', decimals: 2 },
+  { key: 'voltage_rms', label: 'RMS Voltage', unit: 'V', color: '#d97706', decimals: 2 },
+  { key: 'current_rms', label: 'RMS Current', unit: 'A', color: '#db2777', decimals: 3 },
+  { key: 'frequency', label: 'Frequency', unit: 'Hz', color: '#16a34a', decimals: 1 },
 ];
 
 function GaugeCard({ label, value, unit, color, decimals }) {
@@ -17,21 +17,21 @@ function GaugeCard({ label, value, unit, color, decimals }) {
     <div style={{
       background: 'var(--bg-card)', padding: '20px', borderRadius: '14px',
       border: '1px solid var(--border-subtle)', boxShadow: 'var(--card-shadow)',
-      backdropFilter: 'blur(10px)', display: 'flex', flexDirection: 'column',
+      display: 'flex', flexDirection: 'column',
       minWidth: 0,
     }}>
       <div style={{
-        color: 'var(--text-muted)', fontSize: '10px', textTransform: 'uppercase',
-        letterSpacing: '1.5px', marginBottom: '8px',
+        color: 'var(--text-secondary)', fontSize: '13px',
+        letterSpacing: '0.2px', marginBottom: '8px', fontWeight: 600,
       }}>{label}</div>
       <div style={{
         fontSize: '28px', fontWeight: 800, color, fontFamily: 'var(--font-mono)',
-        textShadow: `0 0 20px ${color}44`, lineHeight: 1.1,
+        lineHeight: 1.1,
       }}>
         {displayVal}
       </div>
       <div style={{
-        fontSize: '11px', color: 'var(--text-muted)', marginTop: '4px',
+        fontSize: '12px', color: 'var(--text-muted)', marginTop: '4px',
         fontFamily: 'var(--font-mono)',
       }}>{unit}</div>
     </div>
@@ -74,7 +74,6 @@ export default function LiveReadings({ latestSample, history, isRunning }) {
       <div style={{
         background: 'var(--bg-card)', padding: '24px', borderRadius: '16px',
         border: '1px solid var(--border-subtle)', boxShadow: 'var(--card-shadow)',
-        backdropFilter: 'blur(10px)',
       }}>
         {/* Chart header */}
         <div style={{
@@ -82,8 +81,8 @@ export default function LiveReadings({ latestSample, history, isRunning }) {
           marginBottom: '16px',
         }}>
           <h3 style={{
-            margin: 0, color: metric.color, textTransform: 'uppercase', fontSize: '13px',
-            letterSpacing: '1.5px', textShadow: `0 0 15px ${metric.color}60`,
+            margin: 0, color: metric.color, fontSize: '15px',
+            letterSpacing: '0.2px', fontWeight: 700,
           }}>
             {metric.label} ({metric.unit})
           </h3>
@@ -92,11 +91,10 @@ export default function LiveReadings({ latestSample, history, isRunning }) {
             onChange={e => setSelectedMetric(e.target.value)}
             style={{
               padding: '8px 14px', borderRadius: '8px',
-              background: 'rgba(15, 23, 42, 0.8)', color: metric.color,
+              background: '#fff', color: metric.color,
               border: `1px solid ${metric.color}40`,
-              boxShadow: `0 0 12px ${metric.color}15 inset`,
               cursor: 'pointer', outline: 'none', fontWeight: 600,
-              fontSize: '12px', letterSpacing: '0.5px',
+              fontSize: '13px', letterSpacing: '0.2px',
               fontFamily: 'var(--font-body)',
             }}
           >
@@ -112,7 +110,7 @@ export default function LiveReadings({ latestSample, history, isRunning }) {
             <div style={{
               display: 'flex', justifyContent: 'center', alignItems: 'center',
               height: '100%', color: 'var(--text-muted)', fontStyle: 'italic',
-              letterSpacing: '0.5px', fontSize: '14px',
+              letterSpacing: '0.2px', fontSize: '15px',
             }}>
               {!isRunning ? 'Power on a device to begin streaming...' : 'Collecting data...'}
             </div>
@@ -121,26 +119,26 @@ export default function LiveReadings({ latestSample, history, isRunning }) {
               <AreaChart data={chartData}>
                 <defs>
                   <linearGradient id={`grad-${selectedMetric}`} x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="5%" stopColor={metric.color} stopOpacity={0.3} />
-                    <stop offset="95%" stopColor={metric.color} stopOpacity={0} />
+                    <stop offset="5%" stopColor={metric.color} stopOpacity={0.15} />
+                    <stop offset="95%" stopColor={metric.color} stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
-                <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" vertical={false} />
+                <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" vertical={false} />
                 <XAxis
-                  dataKey="time" stroke="#334155"
-                  tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'var(--font-mono)' }}
+                  dataKey="time" stroke="#cbd5e1"
+                  tick={{ fill: '#6b7280', fontSize: 11, fontFamily: 'var(--font-mono)' }}
                   minTickGap={40}
                 />
                 <YAxis
-                  stroke="#334155"
-                  tick={{ fill: '#64748b', fontSize: 10, fontFamily: 'var(--font-mono)' }}
+                  stroke="#cbd5e1"
+                  tick={{ fill: '#6b7280', fontSize: 11, fontFamily: 'var(--font-mono)' }}
                   domain={['auto', 'auto']}
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: 'rgba(15,23,42,0.95)', border: `1px solid ${metric.color}40`,
-                    borderRadius: '8px', boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
-                    backdropFilter: 'blur(10px)', fontSize: '12px',
+                    backgroundColor: '#fff', border: `1px solid ${metric.color}25`,
+                    borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
+                    fontSize: '13px',
                   }}
                   itemStyle={{ color: metric.color }}
                   formatter={(value) => [`${Number(value).toFixed(metric.decimals)} ${metric.unit}`, metric.label]}

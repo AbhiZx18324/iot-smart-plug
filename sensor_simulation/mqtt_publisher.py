@@ -5,7 +5,7 @@ import os
 import paho.mqtt.client as mqtt
 
 from .signal_generator import SmartPlugSimulator
-from .usage_scheduler import UsageScheduler
+# from .usage_scheduler import UsageScheduler
 
 BROKER_ADDRESS = os.getenv("MQTT_BROKER", "localhost")
 BROKER_PORT = int(os.getenv("MQTT_PORT", 1884))
@@ -21,7 +21,7 @@ class SmartPlugMQTTPublisher:
             plug_id=plug_id,
             fault_mode=fault_mode
         )
-        self.scheduler = UsageScheduler(appliance_name)
+        # self.scheduler = UsageScheduler(appliance_name)   # detached usage scheduler
         self.client = mqtt.Client(client_id=plug_id)
 
     def connect(self):
@@ -43,7 +43,7 @@ class SmartPlugMQTTPublisher:
 
         try:
             while True:
-                self.scheduler.update(self.simulator)
+                # self.scheduler.update(self.simulator) # detached auto on/off simulator
                 self.publish_once()
                 time.sleep(PUBLISH_INTERVAL)
 

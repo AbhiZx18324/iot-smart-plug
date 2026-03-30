@@ -7,3 +7,4 @@ myconfig.conf
 venv/
 digital-twin/node_modules/
 digital-twin/dist/
+.env
