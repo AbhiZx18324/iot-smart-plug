@@ -1,8 +1,13 @@
 import React from 'react';
 import { LOAD_CLASS_LABELS } from '../constants';
 
-function ConfidenceBar({ label, value, color }) {
+function ConfidenceBar({ label, value }) {
   const pct = Math.round((value || 0) * 100);
+
+  let color = '#22c55e'; // Green for high confidence/stability
+  if (pct < 40) color = '#ef4444'; // Red for low
+  else if (pct < 75) color = '#f59e0b'; // Amber for medium
+
   return (
     <div style={{ marginBottom: '14px' }}>
       <div style={{
@@ -24,7 +29,7 @@ function ConfidenceBar({ label, value, color }) {
         <div style={{
           height: '100%', width: `${pct}%`, borderRadius: '4px',
           background: `linear-gradient(90deg, ${color}90, ${color})`,
-          transition: 'width 0.3s ease',
+          transition: 'width 0.3s ease, background 0.3s ease',
         }} />
       </div>
     </div>
@@ -51,14 +56,14 @@ export default function MLOutput({ inference, isRunning }) {
     className={cardClass}
     >
       <h3 style={{
-        color: 'var(--accent-cyan)', margin: '0 0 20px 0', fontSize: '15px',
+        color: 'var(--accent-blue)', margin: '0 0 20px 0', fontSize: '15px',
         letterSpacing: '0.2px', fontWeight: 700,
         display: 'flex', alignItems: 'center', gap: '8px',
       }}>
         <span style={{
           width: '8px', height: '8px', borderRadius: '50%',
-          background: hasInference ? 'var(--accent-cyan)' : '#cbd5e1',
-          boxShadow: hasInference ? '0 0 6px var(--accent-cyan)' : 'none',
+          background: hasInference ? 'var(--accent-blue)' : '#cbd5e1',
+          boxShadow: hasInference ? '0 0 6px var(--accent-blue)' : 'none',
         }} />
         ML Inference Engine
       </h3>
@@ -97,8 +102,8 @@ export default function MLOutput({ inference, isRunning }) {
           </div>
 
           {/* Confidence and Stability bars */}
-          <ConfidenceBar label="Confidence" value={inference.confidence} color="var(--accent-amber)" />
-          <ConfidenceBar label="Stability" value={inference.stability} color="var(--accent-pink)" />
+          <ConfidenceBar label="Confidence" value={inference.confidence} />
+          <ConfidenceBar label="Stability" value={inference.stability} />
 
           {/* Anomaly Status */}
           <div style={{

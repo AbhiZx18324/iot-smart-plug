@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { APPLIANCES } from '../constants';
 
 export default function InteractiveSocket({ 
@@ -6,10 +6,105 @@ export default function InteractiveSocket({
   selectedAppliance, onTogglePower, onSelectDevice, onFaultChange 
 }) {
   const [isFaultMenuOpen, setIsFaultMenuOpen] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [micFeedback, setMicFeedback] = useState('');
+  const recognitionRef = useRef(null);
 
-  const glowColor = isAnomaly ? '#dc2626' : faultMode ? '#ea580c' : '#2563eb';
+  const glowColor = isAnomaly ? '#dc2626' : faultMode ? '#ea580c' : '#38bdf8';
   const intensity = isRunning ? Math.min(power / 1400, 1) * 0.8 + 0.2 : 0;
   const availableFault = selectedAppliance?.fault;
+
+  // Effect to handle cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+    };
+  }, []);
+
+  const handleMicClick = () => {
+    const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setMicFeedback("Speech API not supported in this browser");
+      setTimeout(() => setMicFeedback(''), 3000);
+      return;
+    }
+
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      return;
+    }
+
+    const recognition = new SpeechRecognition();
+    recognitionRef.current = recognition;
+
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.lang = 'en-US';
+
+    recognition.onstart = () => {
+      setIsListening(true);
+      setMicFeedback('Listening...');
+    };
+
+    recognition.onresult = (event) => {
+      let fullTranscript = '';
+      for (let i = 0; i < event.results.length; i++) {
+        fullTranscript += event.results[i][0].transcript;
+      }
+
+      const lastResult = event.results[event.results.length - 1];
+      if (lastResult.isFinal) {
+        const finalTranscript = fullTranscript.toLowerCase().trim();
+        setMicFeedback(`Heard: "${finalTranscript}"`);
+        console.log('Final transcript:', finalTranscript);
+
+        const matchedAppliance = APPLIANCES.find(app => 
+          finalTranscript.includes(app.name.toLowerCase()) ||
+          finalTranscript.replace(/\s+/g, '').includes(app.name.toLowerCase().replace(/\s+/g, ''))
+        );
+
+        let applianceChanged = false;
+        if (matchedAppliance && matchedAppliance.id !== selectedAppliance?.id) {
+          onSelectDevice(matchedAppliance.id);
+          applianceChanged = true;
+        }
+        
+        if (!applianceChanged) {
+          if (finalTranscript.includes('on')) {
+            if (!isRunning && selectedAppliance) onTogglePower();
+          } else if (finalTranscript.includes('off')) {
+            if (isRunning && selectedAppliance) onTogglePower();
+          }
+        }
+
+        recognition.stop();
+      } else {
+        setMicFeedback(`Hearing: "${fullTranscript}"...`);
+      }
+    };
+
+    recognition.onerror = (event) => {
+      if (event.error === 'no-speech') {
+        setMicFeedback("Didn't hear anything clearly. Try again.");
+      } else if (event.error === 'not-allowed') {
+        setMicFeedback("Mic access denied. Check browser permissions.");
+      } else {
+        setMicFeedback(`Error: ${event.error}`);
+      }
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      setTimeout(() => setMicFeedback(''), 3000); // Clear all feedback after 3s
+      recognitionRef.current = null;
+    };
+
+    recognition.start();
+  };
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -33,13 +128,13 @@ export default function InteractiveSocket({
                 style={{
                   display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
                   minWidth: '90px', padding: '14px 10px', borderRadius: '12px',
-                  background: isSelected ? 'var(--accent-cyan)' : '#fff',
-                  color: isSelected ? '#fff' : 'var(--text-primary)',
-                  border: isSelected ? '2px solid var(--accent-cyan)' : '2px solid var(--border-subtle)',
+                  background: isSelected ? 'var(--accent-blue)' : 'var(--button-bg-neutral)',
+                  color: isSelected ? '#fff' : 'var(--button-text-neutral)',
+                  border: isSelected ? '2px solid var(--accent-blue)' : '2px solid var(--border-subtle)',
                   cursor: 'pointer', transition: 'all 0.15s ease',
                   fontFamily: 'var(--font-body)', fontWeight: isSelected ? 700 : 500,
                   fontSize: '12px', gap: '6px', flexShrink: 0,
-                  boxShadow: isSelected ? '0 4px 12px rgba(37,99,235,0.25)' : 'none',
+                  boxShadow: isSelected ? '0 4px 12px rgba(56,189,248,0.25)' : 'none',
                 }}
               >
                 <span style={{ fontSize: '22px' }}>{app.icon}</span>
@@ -59,6 +154,32 @@ export default function InteractiveSocket({
         transition: 'border-color 0.5s ease',
         minHeight: '360px', overflow: 'visible',
       }}>
+
+        {/* Voice Control Mic */}
+        <div style={{ position: 'absolute', top: '24px', right: '24px', display: 'flex', alignItems: 'center', gap: '10px', zIndex: 10 }}>
+          {micFeedback && (
+            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', background: 'rgba(0,0,0,0.05)', padding: '4px 8px', borderRadius: '12px' }}>
+              {micFeedback}
+            </span>
+          )}
+          <button
+            onClick={handleMicClick}
+            style={{
+              background: isListening ? 'rgba(239, 68, 68, 0.1)' : 'rgba(56, 189, 248, 0.05)',
+              border: `1px solid ${isListening ? 'rgba(239, 68, 68, 0.3)' : 'rgba(56, 189, 248, 0.2)'}`,
+              color: isListening ? '#ef4444' : '#38bdf8',
+              width: '50px', height: '50px', borderRadius: '50%',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              cursor: 'pointer',
+              opacity: 1,
+              transition: 'all 0.2s',
+              boxShadow: isListening ? '0 0 12px rgba(239,68,68,0.4)' : 'none'
+            }}
+            title="Voice Control (Say 'On', 'Off', or a device name)"
+          >
+            <span style={{ fontSize: '16px' }}>🎤</span>
+          </button>
+        </div>
         
         {/* Background ambient lighting */}
         <div style={{
@@ -148,7 +269,7 @@ export default function InteractiveSocket({
           {/* Right Side: Appliance Display */}
           <div style={{
             width: '160px', height: '160px', borderRadius: '20px',
-            background: '#fff',
+            background: 'var(--bg-card-solid)',
             border: `2px solid ${isRunning ? glowColor : '#cbd5e1'}`,
             boxShadow: isRunning ? `0 0 20px ${glowColor}18` : 'var(--card-shadow)',
             display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
@@ -219,7 +340,7 @@ export default function InteractiveSocket({
 
                     <div style={{ position: 'absolute', top: '100%', left: '50%', transform: 'translateX(-50%)', paddingTop: '10px', zIndex: 100 }}>
                       <div style={{
-                        background: '#fff', border: '1px solid var(--border-subtle)',
+                        background: 'var(--bg-card-solid)', border: '1px solid var(--border-subtle)',
                         borderRadius: '12px', padding: '6px', width: '220px',
                         boxShadow: '0 12px 32px rgba(0,0,0,0.12)', animation: 'slide-up 0.2s ease-out'
                       }}>

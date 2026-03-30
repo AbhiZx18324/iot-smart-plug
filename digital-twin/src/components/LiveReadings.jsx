@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area, AreaChart } from 'recharts';
 
 const METRICS = [
-  { key: 'power_active', label: 'Active Power', unit: 'W', color: '#2563eb', decimals: 2 },
+  { key: 'power_active', label: 'Active Power', unit: 'W', color: '#38bdf8', decimals: 2 },
   { key: 'voltage_rms', label: 'RMS Voltage', unit: 'V', color: '#d97706', decimals: 2 },
   { key: 'current_rms', label: 'RMS Current', unit: 'A', color: '#db2777', decimals: 3 },
   { key: 'frequency', label: 'Frequency', unit: 'Hz', color: '#16a34a', decimals: 1 },
@@ -91,7 +91,7 @@ export default function LiveReadings({ latestSample, history, isRunning }) {
             onChange={e => setSelectedMetric(e.target.value)}
             style={{
               padding: '8px 14px', borderRadius: '8px',
-              background: '#fff', color: metric.color,
+              background: 'var(--bg-card-solid)', color: metric.color,
               border: `1px solid ${metric.color}40`,
               cursor: 'pointer', outline: 'none', fontWeight: 600,
               fontSize: '13px', letterSpacing: '0.2px',
@@ -136,7 +136,7 @@ export default function LiveReadings({ latestSample, history, isRunning }) {
                 />
                 <Tooltip
                   contentStyle={{
-                    backgroundColor: '#fff', border: `1px solid ${metric.color}25`,
+                    backgroundColor: 'var(--bg-card-solid)', border: `1px solid ${metric.color}25`,
                     borderRadius: '8px', boxShadow: '0 4px 16px rgba(0,0,0,0.1)',
                     fontSize: '13px',
                   }}

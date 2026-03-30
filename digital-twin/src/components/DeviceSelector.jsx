@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { APPLIANCES } from '../constants';
 
 const CATEGORIES = {
-  SMALL_MOTOR_ELECTRONICS: { label: 'Small Motor & Electronics', color: 'var(--accent-cyan)' },
+  SMALL_MOTOR_ELECTRONICS: { label: 'Small Motor & Electronics', color: 'var(--accent-blue)' },
   LIGHTING_LOADS: { label: 'Lighting', color: 'var(--accent-amber)' },
   THERMAL_APPLIANCES: { label: 'Thermal', color: 'var(--accent-pink)' },
   HVAC_REFRIGERATION: { label: 'HVAC / Refrigeration', color: 'var(--accent-green)' },
@@ -26,8 +26,8 @@ export default function DeviceSelector({ selectedId, onSelect }) {
         textShadow: '0 0 15px rgba(255,255,255,0.2)',
       }}>
         <span style={{ 
-          width: '10px', height: '10px', background: 'var(--accent-cyan)', 
-          borderRadius: '50%', boxShadow: '0 0 12px var(--accent-cyan)' 
+          width: '10px', height: '10px', background: 'var(--accent-blue)', 
+          borderRadius: '50%', boxShadow: '0 0 12px var(--accent-blue)' 
         }} />
         Appliance Topology
       </h3>

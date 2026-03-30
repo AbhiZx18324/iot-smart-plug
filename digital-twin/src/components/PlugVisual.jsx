@@ -3,7 +3,7 @@ import React from 'react';
 export default function PlugVisual({ isRunning, power, faultMode, isAnomaly }) {
   const maxPower = 1400;
   const intensity = isRunning ? Math.min(power / maxPower, 1) : 0;
-  const glowColor = isAnomaly ? '#ff3333' : faultMode ? '#e96417' : '#00d8ff';
+  const glowColor = isAnomaly ? '#ff3333' : faultMode ? '#e96417' : '#38bdf8';
   const glowOpacity = isRunning ? 0.3 + intensity * 0.7 : 0.1;
 
   return (

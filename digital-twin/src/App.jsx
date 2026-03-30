@@ -12,12 +12,28 @@ export default function App() {
   const [isRunning, setIsRunning] = useState(false);
   const [faultMode, setFaultMode] = useState(null);
   const [sessionPlugId, setSessionPlugId] = useState('twin-001'); // Initialize with a default or a unique ID
+  const [theme, setTheme] = useState('dark');
 
   const [latestSample, setLatestSample] = useState(null);
   const [history, setHistory] = useState([]);
   const [inference, setInference] = useState(null);
 
   const selectedAppliance = APPLIANCES.find(a => a.id === selectedId);
+
+  // Effect for initializing and updating theme from localStorage
+  useEffect(() => {
+    const savedTheme = localStorage.getItem('smart-plug-theme') || 'dark';
+    setTheme(savedTheme);
+  }, []);
+
+  useEffect(() => {
+    if (theme === 'light') {
+      document.body.classList.add('light-mode');
+    } else {
+      document.body.classList.remove('light-mode');
+    }
+    localStorage.setItem('smart-plug-theme', theme);
+  }, [theme]);
 
   useEffect(() => {
     const handleTelemetry = (payload) => {
@@ -109,6 +125,10 @@ export default function App() {
 
   const currentPower = latestSample?.electrical?.power_active || 0;
 
+  const toggleTheme = () => {
+    setTheme(prevTheme => prevTheme === 'light' ? 'dark' : 'light');
+  };
+
   return (
     <div style={{
       maxWidth: '1400px', margin: '0 auto', padding: '30px 40px',
@@ -123,7 +143,7 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center' }}>
           <div style={{
             width: '10px', height: '10px', borderRadius: '50%',
-            background: 'var(--accent-cyan)',
+            background: 'var(--accent-blue)',
             marginRight: '14px',
           }} />
           <h1 style={{
@@ -132,26 +152,45 @@ export default function App() {
           }}>
             IoT Smart Plug Simulator
             <span style={{
-              color: 'var(--accent-cyan)', fontSize: '12px', verticalAlign: 'middle',
+              color: 'var(--accent-blue)', fontSize: '12px', verticalAlign: 'middle',
               marginLeft: '12px', fontWeight: 600,
             }}>Digital Twin</span>
           </h1>
         </div>
 
-        {selectedAppliance && (
-          <div style={{
-            display: 'flex', alignItems: 'center', gap: '10px',
-            padding: '6px 16px', borderRadius: '20px',
-            background: 'rgba(37, 99, 235, 0.06)',
-            border: '1px solid rgba(37, 99, 235, 0.15)',
-          }}>
-            <span style={{ fontSize: '18px' }}>{selectedAppliance.icon}</span>
-            <span style={{
-              fontFamily: 'var(--font-mono)', fontSize: '13px',
-              color: 'var(--accent-cyan)',
-            }}>{selectedAppliance.name}</span>
-          </div>
-        )}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '20px' }}>
+          {selectedAppliance && (
+            <div style={{
+              display: 'flex', alignItems: 'center', gap: '10px',
+              padding: '6px 16px', borderRadius: '20px',
+              background: 'rgba(56, 189, 248, 0.06)',
+              border: '1px solid rgba(56, 189, 248, 0.15)',
+            }}>
+              <span style={{ fontSize: '18px' }}>{selectedAppliance.icon}</span>
+              <span style={{
+                fontFamily: 'var(--font-mono)', fontSize: '13px',
+                color: 'var(--accent-blue)',
+              }}>{selectedAppliance.name}</span>
+            </div>
+          )}
+          <button
+            onClick={toggleTheme}
+            title="Toggle Theme"
+            style={{
+              background: 'var(--bg-card-solid)',
+              border: '1px solid var(--border-subtle)',
+              width: '40px',
+              height: '40px',
+              borderRadius: '50%',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              fontSize: '18px',
+              cursor: 'pointer',
+              color: 'var(--text-secondary)',
+            }}
+          >{theme === 'light' ? '🌙' : '☀️'}</button>
+        </div>
       </div>
 
       {/* Hero Visual Digital Twin */}
