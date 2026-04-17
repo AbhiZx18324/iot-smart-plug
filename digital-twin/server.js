@@ -1,7 +1,8 @@
+import 'dotenv/config';
 import express from 'express';
 import http from 'http';
 import { Server } from 'socket.io';
-import mqtt from 'mqtt';
+import { InfluxDB } from '@influxdata/influxdb-client';
 import { spawn } from 'child_process';
 import cors from 'cors';
 import fs from 'fs';
@@ -22,35 +23,22 @@ const io = new Server(server, {
   cors: { origin: '*' }
 });
 
-const MQTT_BROKER = process.env.MQTT_BROKER_URL || 'mqtt://localhost:1884';
-let mqttClient = null;
 let pythonProcess = null;
 
-// Connect to Mosquitto
-mqttClient = mqtt.connect(MQTT_BROKER);
+const INFLUX_URL = process.env.INFLUX_URL;
+const INFLUX_TOKEN = process.env.INFLUX_TOKEN;
+const INFLUX_ORG = process.env.INFLUX_ORG;
+const INFLUX_BUCKET = process.env.INFLUX_BUCKET;
 
-mqttClient.on('connect', () => {
-  console.log('Connected to local Mosquitto broker');
-  mqttClient.subscribe('smartplug/+/telemetry');
-  mqttClient.subscribe('smartplug/+/inference');
-});
+const influxDB = new InfluxDB({ url: INFLUX_URL, token: INFLUX_TOKEN });
+const queryApi = influxDB.getQueryApi(INFLUX_ORG);
 
-mqttClient.on('message', (topic, message) => {
-  try {
-    const payload = JSON.parse(message.toString());
-    if (topic.endsWith('/telemetry')) {
-      io.emit('telemetry', payload);
-    } else if (topic.endsWith('/inference')) {
-      io.emit('inference', payload);
-    }
-  } catch (err) {
-    console.error('Error parsing MQTT message:', err);
-  }
-});
 
 io.on('connection', (socket) => {
   console.log('Client connected:', socket.id);
   
+  let influxPollInterval = null;
+
   socket.on('start_simulation', (data) => {
     const { plugId, appliance, faultMode } = data;
     console.log(`Starting simulation for ${appliance} on ${plugId} with fault: ${faultMode || 'None'}`);
@@ -81,6 +69,51 @@ io.on('connection', (socket) => {
       console.log(`Python process exited with code ${code}`);
       pythonProcess = null;
     });
+
+    // Automatically start polling InfluxDB to simulate the live data stream
+    if (influxPollInterval) clearInterval(influxPollInterval);
+    
+    influxPollInterval = setInterval (async () => {
+      // Fetch the absolute latest record for all telemetry and inference fields in one optimized query
+      const query = `
+        from(bucket: "${INFLUX_BUCKET}")
+          |> range(start: -1m)
+          |> filter(fn: (r) => r._measurement == "telemetry" or r._measurement == "inference")
+          |> filter(fn: (r) => r.plug_id == "${plugId}")
+          |> last()
+      `;
+
+      try {
+        const telemetryPayload = { electrical: {} };
+        const inferencePayload = {};
+        let hasTelemetry = false;
+        let hasInference = false;
+        
+        for await (const { values, tableMeta } of queryApi.iterateRows(query)) {
+          const row = tableMeta.toObject(values);
+          if (row._measurement === 'telemetry') {
+            telemetryPayload.electrical[row._field] = row._value;
+            hasTelemetry = true;
+          }
+          if (row._measurement === 'inference') {
+            inferencePayload[row._field] = row._value;
+            hasInference = true;
+          }
+        }
+
+        if (hasTelemetry) {
+          telemetryPayload.plug_id = plugId;
+          telemetryPayload.timestamp = new Date().toISOString();
+          socket.emit('telemetry', telemetryPayload);
+        }
+        if (hasInference) {
+          inferencePayload.plug_id = plugId;
+          socket.emit('inference', inferencePayload);
+        }
+      } catch (error) {
+        console.error('Error polling InfluxDB:', error.message);
+      }
+    }, 1000); // Poll every 1000 milliseconds (1 update per second)
   });
 
   socket.on('stop_simulation', () => {
@@ -89,10 +122,18 @@ io.on('connection', (socket) => {
       pythonProcess.kill('SIGINT');
       pythonProcess = null;
     }
+    if (influxPollInterval) {
+      clearInterval(influxPollInterval);
+      influxPollInterval = null;
+    }
   });
 
   socket.on('disconnect', () => {
     console.log('Client disconnected:', socket.id);
+    if (influxPollInterval) {
+      clearInterval(influxPollInterval);
+      influxPollInterval = null;
+    }
     if (io.engine.clientsCount === 0 && pythonProcess) {
       pythonProcess.kill('SIGINT');
       pythonProcess = null;
