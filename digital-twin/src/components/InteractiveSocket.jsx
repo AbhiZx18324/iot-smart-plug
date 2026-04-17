@@ -6,105 +6,163 @@ export default function InteractiveSocket({
   selectedAppliance, onTogglePower, onSelectDevice, onFaultChange 
 }) {
   const [isFaultMenuOpen, setIsFaultMenuOpen] = useState(false);
-  const [isListening, setIsListening] = useState(false);
+  const [isAwake, setIsAwake] = useState(false);
   const [micFeedback, setMicFeedback] = useState('');
   const recognitionRef = useRef(null);
+  const isAwakeRef = useRef(false);
+  const stopBackgroundRef = useRef(false);
+  const sleepTimeoutRef = useRef(null);
+
+  // Store latest props in refs to prevent restarting continuous recognition on every render
+  const isRunningRef = useRef(isRunning);
+  const selectedApplianceRef = useRef(selectedAppliance);
+  const onTogglePowerRef = useRef(onTogglePower);
+  const onSelectDeviceRef = useRef(onSelectDevice);
 
   const glowColor = isAnomaly ? '#dc2626' : faultMode ? '#ea580c' : '#38bdf8';
   const intensity = isRunning ? Math.min(power / 1400, 1) * 0.8 + 0.2 : 0;
   const availableFault = selectedAppliance?.fault;
 
-  // Effect to handle cleanup on unmount
   useEffect(() => {
-    return () => {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
-    };
-  }, []);
+    isRunningRef.current = isRunning;
+    selectedApplianceRef.current = selectedAppliance;
+    onTogglePowerRef.current = onTogglePower;
+    onSelectDeviceRef.current = onSelectDevice;
+  }, [isRunning, selectedAppliance, onTogglePower, onSelectDevice]);
 
-  const handleMicClick = () => {
+  useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
     if (!SpeechRecognition) {
       setMicFeedback("Speech API not supported in this browser");
-      setTimeout(() => setMicFeedback(''), 3000);
-      return;
-    }
-
-    if (isListening) {
-      if (recognitionRef.current) {
-        recognitionRef.current.stop();
-      }
       return;
     }
 
     const recognition = new SpeechRecognition();
-    recognitionRef.current = recognition;
-
     recognition.continuous = true;
     recognition.interimResults = true;
     recognition.lang = 'en-US';
+    recognitionRef.current = recognition;
+
+    const goToSleep = () => {
+      setIsAwake(false);
+      isAwakeRef.current = false;
+      setMicFeedback("Try Saying Ok Electro...");
+    };
 
     recognition.onstart = () => {
-      setIsListening(true);
-      setMicFeedback('Listening...');
+      setMicFeedback("Try Saying Ok Electro...");
     };
 
     recognition.onresult = (event) => {
-      let fullTranscript = '';
-      for (let i = 0; i < event.results.length; i++) {
-        fullTranscript += event.results[i][0].transcript;
+      let interimTranscript = '';
+      let finalTranscript = '';
+
+      // Only process newest results
+      for (let i = event.resultIndex; i < event.results.length; ++i) {
+        if (event.results[i].isFinal) {
+          finalTranscript += event.results[i][0].transcript.toLowerCase();
+        } else {
+          interimTranscript += event.results[i][0].transcript.toLowerCase();
+        }
       }
 
-      const lastResult = event.results[event.results.length - 1];
-      if (lastResult.isFinal) {
-        const finalTranscript = fullTranscript.toLowerCase().trim();
-        setMicFeedback(`Heard: "${finalTranscript}"`);
-        console.log('Final transcript:', finalTranscript);
+      const currentTranscript = (finalTranscript || interimTranscript).trim();
+      if (!currentTranscript) return;
 
-        const matchedAppliance = APPLIANCES.find(app => 
-          finalTranscript.includes(app.name.toLowerCase()) ||
-          finalTranscript.replace(/\s+/g, '').includes(app.name.toLowerCase().replace(/\s+/g, ''))
-        );
-
-        let applianceChanged = false;
-        if (matchedAppliance && matchedAppliance.id !== selectedAppliance?.id) {
-          onSelectDevice(matchedAppliance.id);
-          applianceChanged = true;
+      if (!isAwakeRef.current) {
+        // Waiting for Wake Word in background
+        if (currentTranscript.includes('ok electro') || currentTranscript.includes('okay electro')) {
+          setIsAwake(true);
+          isAwakeRef.current = true;
+          setMicFeedback('Listening for command...');
+          
+          clearTimeout(sleepTimeoutRef.current);
+          sleepTimeoutRef.current = setTimeout(goToSleep, 10000); // Sleep after 10s of silence
         }
-        
-        if (!applianceChanged) {
-          if (finalTranscript.includes('on')) {
-            if (!isRunning && selectedAppliance) onTogglePower();
-          } else if (finalTranscript.includes('off')) {
-            if (isRunning && selectedAppliance) onTogglePower();
-          }
-        }
-
-        recognition.stop();
       } else {
-        setMicFeedback(`Hearing: "${fullTranscript}"...`);
+        // Awake and listening for commands
+        if (!finalTranscript) setMicFeedback(`Hearing: "${currentTranscript}"...`);
+        
+        if (finalTranscript) {
+          // 1. Ignore the finalized wake word if it arrives immediately after the interim wake word
+          const cleanTranscript = finalTranscript.replace(/[.,!?]/g, '').trim();
+          if (cleanTranscript === 'ok electro' || cleanTranscript === 'okay electro') {
+            return;
+          }
+
+          const matchedAppliance = APPLIANCES.find(app => 
+            finalTranscript.includes(app.name.toLowerCase()) ||
+            finalTranscript.replace(/\s+/g, '').includes(app.name.toLowerCase().replace(/\s+/g, ''))
+          );
+
+          let applianceChanged = false;
+          if (matchedAppliance && matchedAppliance.id !== selectedApplianceRef.current?.id) {
+            onSelectDeviceRef.current(matchedAppliance.id);
+            applianceChanged = true;
+          }
+          
+          const hasOn = finalTranscript.includes('on');
+          const hasOff = finalTranscript.includes('off');
+
+          // 2. If no actionable command was found, keep listening instead of aborting!
+          if (!applianceChanged && !hasOn && !hasOff) {
+            setMicFeedback(`Waiting for command... (Heard: "${cleanTranscript}")`);
+            return;
+          }
+
+          if (applianceChanged) {
+            // Wait a brief moment for React state to update the newly selected device before toggling power
+            setTimeout(() => {
+              if (hasOn && !isRunningRef.current) {
+                onTogglePowerRef.current();
+              } else if (hasOff && isRunningRef.current) {
+                onTogglePowerRef.current();
+              }
+            }, 300);
+          } else {
+            if (hasOn && !isRunningRef.current && selectedApplianceRef.current) {
+              onTogglePowerRef.current();
+            } else if (hasOff && isRunningRef.current && selectedApplianceRef.current) {
+              onTogglePowerRef.current();
+            }
+          }
+
+          clearTimeout(sleepTimeoutRef.current);
+          setIsAwake(false);
+          isAwakeRef.current = false;
+          setMicFeedback(`Executed: "${finalTranscript.trim()}"`);
+          setTimeout(goToSleep, 5000); // Leave the success message on screen longer
+        }
       }
     };
 
     recognition.onerror = (event) => {
-      if (event.error === 'no-speech') {
-        setMicFeedback("Didn't hear anything clearly. Try again.");
-      } else if (event.error === 'not-allowed') {
+      if (event.error === 'not-allowed') {
+        stopBackgroundRef.current = true;
         setMicFeedback("Mic access denied. Check browser permissions.");
-      } else {
-        setMicFeedback(`Error: ${event.error}`);
       }
     };
 
     recognition.onend = () => {
-      setIsListening(false);
-      setTimeout(() => setMicFeedback(''), 3000); // Clear all feedback after 3s
-      recognitionRef.current = null;
+      // Automatically restart the microphone to keep it listening permanently
+      if (!stopBackgroundRef.current) {
+        setTimeout(() => {
+          try { recognition.start(); } catch(e) {}
+        }, 200); // Small delay to prevent call stack issues on auto-restart
+      }
     };
 
-    recognition.start();
-  };
+    // Start continuous background listening immediately
+    try { 
+      recognition.start(); 
+    } catch(e) {}
+
+    return () => {
+      stopBackgroundRef.current = true; // Stop infinite restart loop
+      clearTimeout(sleepTimeoutRef.current);
+      if (recognitionRef.current) recognitionRef.current.stop();
+    };
+  }, []);
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
@@ -155,30 +213,22 @@ export default function InteractiveSocket({
         minHeight: '360px', overflow: 'visible',
       }}>
 
-        {/* Voice Control Mic */}
+        {/* Voice Control Status Indicator */}
         <div style={{ position: 'absolute', top: '24px', right: '24px', display: 'flex', alignItems: 'center', gap: '10px', zIndex: 10 }}>
-          {micFeedback && (
-            <span style={{ fontSize: '12px', color: 'var(--text-muted)', fontStyle: 'italic', background: 'rgba(0,0,0,0.05)', padding: '4px 8px', borderRadius: '12px' }}>
-              {micFeedback}
-            </span>
-          )}
-          <button
-            onClick={handleMicClick}
-            style={{
-              background: isListening ? 'rgba(239, 68, 68, 0.1)' : 'rgba(56, 189, 248, 0.05)',
-              border: `1px solid ${isListening ? 'rgba(239, 68, 68, 0.3)' : 'rgba(56, 189, 248, 0.2)'}`,
-              color: isListening ? '#ef4444' : '#38bdf8',
-              width: '50px', height: '50px', borderRadius: '50%',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              cursor: 'pointer',
-              opacity: 1,
+          <div style={{ 
+            display: 'flex', alignItems: 'center', gap: '8px',
+              background: isAwake ? 'rgba(239, 68, 68, 0.1)' : 'rgba(56, 189, 248, 0.05)',
+              border: `1px solid ${isAwake ? 'rgba(239, 68, 68, 0.3)' : 'rgba(56, 189, 248, 0.2)'}`,
+              padding: '8px 16px', borderRadius: '20px',
               transition: 'all 0.2s',
-              boxShadow: isListening ? '0 0 12px rgba(239,68,68,0.4)' : 'none'
+              boxShadow: isAwake ? '0 0 12px rgba(239,68,68,0.4)' : 'none'
             }}
-            title="Voice Control (Say 'On', 'Off', or a device name)"
           >
-            <span style={{ fontSize: '16px' }}>🎤</span>
-          </button>
+            <span style={{ fontSize: '16px', animation: isAwake ? 'pulse-glow 1.5s infinite' : 'none' }}>🎤</span>
+            <span style={{ fontSize: '12px', color: isAwake ? '#ef4444' : 'var(--text-muted)', fontWeight: isAwake ? 600 : 500 }}>
+              {micFeedback || "Initializing mic..."}
+            </span>
+          </div>
         </div>
         
         {/* Background ambient lighting */}
