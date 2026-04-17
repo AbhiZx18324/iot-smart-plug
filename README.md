@@ -32,7 +32,7 @@ graph TD
     D -->|MQTT Inference| B
     D -->|Prediction Log| E
 
-    G --> E
+    G[Web Dashboard] --> E
 ```
 ---
 
