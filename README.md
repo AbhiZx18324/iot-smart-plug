@@ -27,15 +27,13 @@ graph TD
     B --> C[Backend Ingestion Service]
     B --> D[ML Inference Service]
 
-    C --> E[(Time-Series DB)]
-    C --> F[(Metadata DB)]
+    C --> E[(Smart Plug DB)]
 
     D -->|MQTT Inference| B
-    D -->|Prediction Log| F
+    D -->|Prediction Log| E
 
     B --> G[Web Dashboard]
     G --> E
-    G --> F
 ```
 ---
 
